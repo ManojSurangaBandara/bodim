@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/room.dart';
+import '../services/app_state.dart';
 
 class RoomDetailPage extends StatefulWidget {
   final Room room;
@@ -121,12 +122,41 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     );
   }
 
+  void _deleteRoom() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Ad'),
+        content: const Text('Are you sure you want to delete this ad?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              AppState.instance.deleteRoom(widget.room);
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pop(); // back to list
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final images = widget.room.images ?? [];
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.room.title)),
+      appBar: AppBar(
+        title: Text(widget.room.title),
+        actions: [
+          IconButton(icon: const Icon(Icons.delete), onPressed: _deleteRoom),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

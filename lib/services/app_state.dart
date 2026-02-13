@@ -74,4 +74,12 @@ class AppState {
     Hive.box<Room>('rooms').add(room);
     // rooms notifier will update via the box watcher
   }
+
+  void deleteRoom(Room room) {
+    final index = rooms.value.indexOf(room);
+    if (index != -1) {
+      Hive.box<Room>('rooms').deleteAt(index);
+      // rooms notifier will update via the box watcher
+    }
+  }
 }
