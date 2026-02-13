@@ -23,37 +23,6 @@ class AppState {
     registered.clear();
     registered.addAll(usersBox.values.toList());
 
-    // seed rooms if empty
-    if (roomsBox.isEmpty) {
-      await roomsBox.add(
-        Room(
-          title: 'Cozy studio',
-          price: '200',
-          images: [],
-          description: 'Cozy studio near downtown',
-          contact: '0771234567',
-        ),
-      );
-      await roomsBox.add(
-        Room(
-          title: 'Spacious 2BR',
-          price: '350',
-          images: [],
-          description: 'Two bedroom apartment with balcony',
-          contact: '0772345678',
-        ),
-      );
-      await roomsBox.add(
-        Room(
-          title: 'Bright room near park',
-          price: '450',
-          images: [],
-          description: 'Sunny room facing the park',
-          contact: '0773456789',
-        ),
-      );
-    }
-
     // load rooms into notifier
     rooms.value = roomsBox.values.toList();
 
