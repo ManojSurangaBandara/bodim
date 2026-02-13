@@ -55,6 +55,7 @@ class _AddPostPageState extends State<AddPostPage> {
         price: p,
         contact: c,
         creatorEmail: AppState.instance.currentUser.value!.email,
+        createdAt: DateTime.now(),
         images: _localImagePaths.isNotEmpty
             ? List.from(_localImagePaths)
             : null,

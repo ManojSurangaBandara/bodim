@@ -8,6 +8,21 @@ class RoomCard extends StatelessWidget {
   final Room room;
   const RoomCard({super.key, required this.room});
 
+  String _timeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget leading;
@@ -35,7 +50,9 @@ class RoomCard extends StatelessWidget {
       child: ListTile(
         leading: leading,
         title: Text(room.title),
-        subtitle: Text('රු. ${room.price} / month'),
+        subtitle: Text(
+          'රු. ${room.price} / month${room.createdAt != null ? ' • ${_timeAgo(room.createdAt!)}' : ''}',
+        ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(
           context,
