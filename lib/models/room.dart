@@ -20,11 +20,15 @@ class Room extends HiveObject {
   @HiveField(4)
   final String? contact;
 
+  @HiveField(5)
+  final String? creatorEmail;
+
   Room({
     required this.title,
     required this.price,
     this.images,
     this.description,
     this.contact,
+    this.creatorEmail,
   });
 }

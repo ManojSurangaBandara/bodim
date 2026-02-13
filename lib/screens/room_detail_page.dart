@@ -149,13 +149,21 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   @override
   Widget build(BuildContext context) {
     final images = widget.room.images ?? [];
+    final currentUser = AppState.instance.currentUser.value;
+    final canDelete =
+        currentUser != null && widget.room.creatorEmail == currentUser.email;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.room.title),
-        actions: [
-          IconButton(icon: const Icon(Icons.delete), onPressed: _deleteRoom),
-        ],
+        actions: canDelete
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: _deleteRoom,
+                ),
+              ]
+            : null,
       ),
       body: SingleChildScrollView(
         child: Column(

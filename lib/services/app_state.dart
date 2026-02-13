@@ -78,6 +78,11 @@ class AppState {
   }
 
   void deleteRoom(Room room) {
+    final user = currentUser.value;
+    if (user == null || room.creatorEmail != user.email) {
+      // not logged in or not the creator
+      return;
+    }
     final index = rooms.value.indexOf(room);
     if (index != -1) {
       Hive.box<Room>('rooms').deleteAt(index);
