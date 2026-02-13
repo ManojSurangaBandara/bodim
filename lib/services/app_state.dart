@@ -89,4 +89,17 @@ class AppState {
       // rooms notifier will update via the box watcher
     }
   }
+
+  void updateRoom(Room oldRoom, Room newRoom) {
+    final user = currentUser.value;
+    if (user == null || oldRoom.creatorEmail != user.email) {
+      // not logged in or not the creator
+      return;
+    }
+    final index = rooms.value.indexOf(oldRoom);
+    if (index != -1) {
+      Hive.box<Room>('rooms').putAt(index, newRoom);
+      // rooms notifier will update via the box watcher
+    }
+  }
 }

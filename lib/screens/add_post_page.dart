@@ -8,7 +8,8 @@ import '../models/room.dart';
 import '../services/app_state.dart';
 
 class AddPostPage extends StatefulWidget {
-  const AddPostPage({super.key});
+  final Room? roomToEdit;
+  const AddPostPage({super.key, this.roomToEdit});
 
   @override
   State<AddPostPage> createState() => _AddPostPageState();
@@ -23,6 +24,21 @@ class _AddPostPageState extends State<AddPostPage> {
   final ImagePicker _picker = ImagePicker();
   String? _selectedDistrict;
   String? _selectedTown;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.roomToEdit != null) {
+      final room = widget.roomToEdit!;
+      _titleCtl.text = room.title;
+      _priceCtl.text = room.price;
+      _descCtl.text = room.description ?? '';
+      _contactCtl.text = room.contact ?? '';
+      _localImagePaths.addAll(room.images ?? []);
+      _selectedDistrict = room.district;
+      _selectedTown = room.town;
+    }
+  }
 
   static const Map<String, List<String>> _districtTowns = {
     'Colombo': [
@@ -477,21 +493,22 @@ class _AddPostPageState extends State<AddPostPage> {
       ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       return;
     }
-    AppState.instance.addRoom(
-      Room(
-        title: t,
-        price: p,
-        contact: c,
-        creatorEmail: AppState.instance.currentUser.value!.email,
-        createdAt: DateTime.now(),
-        images: _localImagePaths.isNotEmpty
-            ? List.from(_localImagePaths)
-            : null,
-        description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
-        district: _selectedDistrict,
-        town: _selectedTown,
-      ),
+    final newRoom = Room(
+      title: t,
+      price: p,
+      contact: c,
+      creatorEmail: AppState.instance.currentUser.value!.email,
+      createdAt: widget.roomToEdit?.createdAt ?? DateTime.now(),
+      images: _localImagePaths.isNotEmpty ? List.from(_localImagePaths) : null,
+      description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
+      district: _selectedDistrict,
+      town: _selectedTown,
     );
+    if (widget.roomToEdit != null) {
+      AppState.instance.updateRoom(widget.roomToEdit!, newRoom);
+    } else {
+      AppState.instance.addRoom(newRoom);
+    }
     Navigator.of(context).pop();
   }
 
@@ -506,7 +523,9 @@ class _AddPostPageState extends State<AddPostPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Room')),
+      appBar: AppBar(
+        title: Text(widget.roomToEdit == null ? 'Add Room' : 'Edit Room'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

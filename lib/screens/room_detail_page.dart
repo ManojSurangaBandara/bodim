@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/room.dart';
 import '../services/app_state.dart';
+import 'add_post_page.dart';
 
 class RoomDetailPage extends StatefulWidget {
   final Room room;
@@ -183,6 +184,14 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         title: Text(widget.room.title),
         actions: canDelete
             ? [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AddPostPage(roomToEdit: widget.room),
+                    ),
+                  ),
+                ),
                 IconButton(
                   icon: const Icon(Icons.delete),
                   onPressed: _deleteRoom,
