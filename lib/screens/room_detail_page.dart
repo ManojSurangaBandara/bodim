@@ -146,6 +146,31 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     );
   }
 
+  String _formatDateTime(DateTime dt) {
+    final local = dt.toLocal();
+    final now = DateTime.now();
+    final difference = now.difference(local);
+
+    String timeStr = _formatTime(local);
+
+    if (difference.inDays == 0) {
+      return '$timeStr today';
+    } else if (difference.inDays == 1) {
+      return '$timeStr yesterday';
+    } else {
+      return '${local.day}/${local.month}/${local.year} at $timeStr';
+    }
+  }
+
+  String _formatTime(DateTime dt) {
+    int hour = dt.hour;
+    int minute = dt.minute;
+    String period = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour == 0) hour = 12;
+    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
+  }
+
   @override
   Widget build(BuildContext context) {
     final images = widget.room.images ?? [];
@@ -267,6 +292,17 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                     Text(
                       widget.room.description!,
                       style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+
+                  if (widget.room.createdAt != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'Posted on: ${_formatDateTime(widget.room.createdAt!)}',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                      ),
                     ),
 
                   const SizedBox(height: 12),
