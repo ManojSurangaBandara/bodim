@@ -16,24 +16,10 @@ class RoomAdapter extends TypeAdapter<Room> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    // backward-compatible handling: older records stored a single `String`
-    // in field 2 (imageUrl). Coerce that to a List<String> when reading.
-    final rawImages = fields[2];
-    List<String>? images;
-    if (rawImages == null) {
-      images = null;
-    } else if (rawImages is String) {
-      images = [rawImages];
-    } else if (rawImages is List) {
-      images = rawImages.cast<String>();
-    } else {
-      images = null;
-    }
-
     return Room(
       title: fields[0] as String,
       price: fields[1] as String,
-      images: images,
+      images: (fields[2] as List?)?.cast<String>(),
       description: fields[3] as String?,
       contact: fields[4] as String?,
     );

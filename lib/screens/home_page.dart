@@ -3,6 +3,7 @@ import '../services/app_state.dart';
 import '../widgets/room_card.dart';
 import 'login_page.dart';
 import 'add_post_page.dart';
+import 'profile_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -29,11 +30,18 @@ class HomePage extends StatelessWidget {
               } else {
                 return PopupMenuButton<int>(
                   onSelected: (v) {
-                    if (v == 1) app.logout();
+                    if (v == 1) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ProfilePage()),
+                      );
+                    } else if (v == 2) {
+                      app.logout();
+                    }
                   },
                   itemBuilder: (_) => [
                     PopupMenuItem(value: 0, child: Text(user.email)),
-                    const PopupMenuItem(value: 1, child: Text('Logout')),
+                    const PopupMenuItem(value: 1, child: Text('Profile')),
+                    const PopupMenuItem(value: 2, child: Text('Logout')),
                   ],
                   icon: const Icon(Icons.account_circle),
                 );

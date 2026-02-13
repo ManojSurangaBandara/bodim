@@ -45,7 +45,9 @@ class AppState {
 
   bool login(String email, String password) {
     try {
-      final user = registered.firstWhere((u) => u.email == email);
+      final user = registered.firstWhere(
+        (u) => u.email == email && u.password == password,
+      );
       currentUser.value = user;
       Hive.box('app').put('currentUserEmail', user.email);
       return true;
@@ -56,7 +58,7 @@ class AppState {
 
   bool register(String email, String password) {
     if (registered.any((u) => u.email == email)) return false;
-    final u = User(email);
+    final u = User(email, password: password);
     // persist
     Hive.box<User>('users').put(email, u);
     registered.add(u);

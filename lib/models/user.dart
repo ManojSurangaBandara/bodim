@@ -7,5 +7,14 @@ class User extends HiveObject {
   @HiveField(0)
   final String email;
 
-  User(this.email);
+  @HiveField(1)
+  String? name;
+
+  @HiveField(2)
+  String? phone;
+
+  @HiveField(3)
+  String? password; // hashed or plain? for simplicity, plain, but in real app hash
+
+  User(this.email, {this.name, this.phone, this.password});
 }
