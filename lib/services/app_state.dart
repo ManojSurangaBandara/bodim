@@ -1,0 +1,108 @@
+import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
+import '../models/user.dart';
+import '../models/room.dart';
+
+class AppState {
+  AppState._internal();
+  static final AppState instance = AppState._internal();
+
+  final ValueNotifier<User?> currentUser = ValueNotifier<User?>(null);
+  final ValueNotifier<List<Room>> rooms = ValueNotifier<List<Room>>([]);
+
+  // in-memory mirror of registered users (backed by Hive box)
+  final List<User> registered = [];
+
+  // Call from main before runApp
+  Future<void> init() async {
+    final usersBox = Hive.box<User>('users');
+    final roomsBox = Hive.box<Room>('rooms');
+    final appBox = Hive.box('app');
+
+    // load users
+    registered.clear();
+    registered.addAll(usersBox.values.toList());
+
+    // seed rooms if empty
+    if (roomsBox.isEmpty) {
+      await roomsBox.add(
+        Room(
+          title: 'Cozy studio',
+          price: '200',
+          images: [],
+          description: 'Cozy studio near downtown',
+          contact: '0771234567',
+        ),
+      );
+      await roomsBox.add(
+        Room(
+          title: 'Spacious 2BR',
+          price: '350',
+          images: [],
+          description: 'Two bedroom apartment with balcony',
+          contact: '0772345678',
+        ),
+      );
+      await roomsBox.add(
+        Room(
+          title: 'Bright room near park',
+          price: '450',
+          images: [],
+          description: 'Sunny room facing the park',
+          contact: '0773456789',
+        ),
+      );
+    }
+
+    // load rooms into notifier
+    rooms.value = roomsBox.values.toList();
+
+    // load current user if any
+    final currentEmail = appBox.get('currentUserEmail') as String?;
+    if (currentEmail != null) {
+      try {
+        final u = registered.firstWhere((u) => u.email == currentEmail);
+        currentUser.value = u;
+      } catch (_) {
+        currentUser.value = null;
+      }
+    }
+
+    // listen to Hive changes and keep notifier in sync
+    roomsBox.watch().listen((event) {
+      rooms.value = roomsBox.values.toList();
+    });
+  }
+
+  bool login(String email, String password) {
+    try {
+      final user = registered.firstWhere((u) => u.email == email);
+      currentUser.value = user;
+      Hive.box('app').put('currentUserEmail', user.email);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  bool register(String email, String password) {
+    if (registered.any((u) => u.email == email)) return false;
+    final u = User(email);
+    // persist
+    Hive.box<User>('users').put(email, u);
+    registered.add(u);
+    currentUser.value = u;
+    Hive.box('app').put('currentUserEmail', u.email);
+    return true;
+  }
+
+  void logout() {
+    currentUser.value = null;
+    Hive.box('app').delete('currentUserEmail');
+  }
+
+  void addRoom(Room room) {
+    Hive.box<Room>('rooms').add(room);
+    // rooms notifier will update via the box watcher
+  }
+}
