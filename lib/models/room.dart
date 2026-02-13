@@ -26,6 +26,12 @@ class Room extends HiveObject {
   @HiveField(6)
   final DateTime? createdAt;
 
+  @HiveField(7)
+  final String? district;
+
+  @HiveField(8)
+  final String? town;
+
   Room({
     required this.title,
     required this.price,
@@ -34,5 +40,7 @@ class Room extends HiveObject {
     this.contact,
     this.creatorEmail,
     this.createdAt,
+    this.district,
+    this.town,
   });
 }

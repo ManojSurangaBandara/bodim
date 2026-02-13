@@ -323,6 +323,25 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                       ],
                     ),
 
+                  if (widget.room.district != null && widget.room.town != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${widget.room.town}, ${widget.room.district}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+
                   const SizedBox(height: 16),
                   Row(
                     children: [

@@ -24,13 +24,15 @@ class RoomAdapter extends TypeAdapter<Room> {
       contact: fields[4] as String?,
       creatorEmail: fields[5] as String?,
       createdAt: fields[6] as DateTime?,
+      district: fields[7] as String?,
+      town: fields[8] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Room obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -44,7 +46,11 @@ class RoomAdapter extends TypeAdapter<Room> {
       ..writeByte(5)
       ..write(obj.creatorEmail)
       ..writeByte(6)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(7)
+      ..write(obj.district)
+      ..writeByte(8)
+      ..write(obj.town);
   }
 
   @override

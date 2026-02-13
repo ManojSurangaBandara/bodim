@@ -51,7 +51,7 @@ class RoomCard extends StatelessWidget {
         leading: leading,
         title: Text(room.title),
         subtitle: Text(
-          'රු. ${room.price} / month${room.createdAt != null ? ' • ${_timeAgo(room.createdAt!)}' : ''}',
+          'රු. ${room.price} / month${room.createdAt != null ? ' • ${_timeAgo(room.createdAt!)}' : ''}${room.district != null && room.town != null ? ' • ${room.town}, ${room.district}' : ''}',
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(
