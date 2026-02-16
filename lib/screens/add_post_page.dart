@@ -526,7 +526,7 @@ class _AddPostPageState extends State<AddPostPage> {
       appBar: AppBar(
         title: Text(widget.roomToEdit == null ? 'Add Room' : 'Edit Room'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -601,11 +601,11 @@ class _AddPostPageState extends State<AddPostPage> {
                           right: 4,
                           child: CircleAvatar(
                             radius: 14,
-                            backgroundColor: Colors.black45,
+                            backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
                             child: IconButton(
                               padding: EdgeInsets.zero,
                               iconSize: 16,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               icon: const Icon(Icons.close),
                               onPressed: () =>
                                   setState(() => _localImagePaths.removeAt(i)),
@@ -617,14 +617,15 @@ class _AddPostPageState extends State<AddPostPage> {
                   },
                 ),
               ),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 ElevatedButton.icon(
                   onPressed: _pickImages,
                   icon: const Icon(Icons.photo_library),
                   label: const Text('Add Images'),
                 ),
-                const SizedBox(width: 12),
                 if (_localImagePaths.isNotEmpty)
                   TextButton(
                     onPressed: () => setState(() => _localImagePaths.clear()),
@@ -633,7 +634,10 @@ class _AddPostPageState extends State<AddPostPage> {
               ],
             ),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: _submit, child: const Text('Post')),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(onPressed: _submit, child: const Text('Post')),
+            ),
           ],
         ),
       ),

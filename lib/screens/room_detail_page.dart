@@ -208,9 +208,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
               height: 300,
               child: images.isEmpty
                   ? Container(
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child: Icon(Icons.home, size: 96, color: Colors.grey),
+                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.06),
+                      child: Center(
+                        child: Icon(Icons.home, size: 96, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     )
                   : Stack(
@@ -220,23 +220,40 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                           onPageChanged: (i) => setState(() => _page = i),
                           itemBuilder: (context, i) {
                             final src = images[i];
+                            final heroTag = '${widget.room.title}-${widget.room.createdAt?.millisecondsSinceEpoch ?? widget.room.price}-$i';
+
+                            Widget img;
+                            if (src.startsWith('http')) {
+                              img = Image.network(src, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+                            } else {
+                              final f = File(src);
+                              img = f.existsSync()
+                                  ? Image.file(f, fit: BoxFit.cover, width: double.infinity, height: double.infinity)
+                                  : Container(color: Colors.grey.shade200);
+                            }
+
                             return GestureDetector(
                               onTap: () => _openFullScreen(i),
-                              child: src.startsWith('http')
-                                  ? Image.network(
-                                      src,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                    )
-                                  : (File(src).existsSync()
-                                        ? Image.file(
-                                            File(src),
-                                            fit: BoxFit.cover,
-                                            width: double.infinity,
-                                          )
-                                        : Container(
-                                            color: Colors.grey.shade200,
-                                          )),
+                              child: Hero(
+                                tag: heroTag,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    img,
+                                    Positioned.fill(
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [Colors.transparent, Theme.of(context).colorScheme.onSurface.withOpacity(0.12)],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -255,12 +272,12 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                 height: _page == i ? 10 : 8,
                                 decoration: BoxDecoration(
                                   color: _page == i
-                                      ? Colors.white
-                                      : Colors.white70,
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black26,
+                                      color: Colors.black12,
                                       blurRadius: 2,
                                       offset: Offset(0, 1),
                                     ),
@@ -291,7 +308,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                       Text(
                         'රු. ${widget.room.price}',
                         style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(color: Colors.green),
+                            ?.copyWith(color: Theme.of(context).colorScheme.primary),
                       ),
                     ],
                   ),
@@ -310,7 +327,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                         'Posted on: ${_formatDateTime(widget.room.createdAt!)}',
                         style: Theme.of(
                           context,
-                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                        ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ),
 
@@ -319,10 +336,10 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                       widget.room.contact!.isNotEmpty)
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.phone,
                           size: 18,
-                          color: Colors.black54,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 8),
                         SelectableText(
@@ -337,10 +354,10 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.location_on,
                             size: 18,
-                            color: Colors.black54,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -443,9 +460,9 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.close),
@@ -467,7 +484,7 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
                 final f = File(src);
                 image = f.existsSync()
                     ? Image.file(f, fit: BoxFit.contain)
-                    : Container(color: Colors.black);
+                    : Container(color: Theme.of(context).colorScheme.background);
               }
               return Center(
                 child: InteractiveViewer(
@@ -490,7 +507,7 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
                   width: _current == i ? 10 : 8,
                   height: _current == i ? 10 : 8,
                   decoration: BoxDecoration(
-                    color: _current == i ? Colors.white : Colors.white54,
+                    color: _current == i ? Theme.of(context).colorScheme.onBackground : Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
                     shape: BoxShape.circle,
                   ),
                 );

@@ -25,38 +25,79 @@ class RoomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget leading;
+    final heroBase = '${room.title}-${room.createdAt?.millisecondsSinceEpoch ?? room.price}';
+
+    Widget imageWidget;
     if (room.images != null && room.images!.isNotEmpty) {
       final first = room.images!.first;
       if (first.startsWith('http')) {
-        leading = Image.network(
-          first,
-          width: 60,
-          height: 60,
-          fit: BoxFit.cover,
-        );
+        imageWidget = Image.network(first, fit: BoxFit.cover);
       } else {
         final f = File(first);
-        leading = f.existsSync()
-            ? Image.file(f, width: 60, height: 60, fit: BoxFit.cover)
-            : const Icon(Icons.home, size: 40);
+        imageWidget = f.existsSync()
+            ? Image.file(f, fit: BoxFit.cover)
+            : Icon(Icons.home, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant);
       }
     } else {
-      leading = const Icon(Icons.home, size: 40);
+      imageWidget = Icon(Icons.home, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant);
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      child: ListTile(
-        leading: leading,
-        title: Text(room.title),
-        subtitle: Text(
-          'රු. ${room.price} / month${room.createdAt != null ? ' • ${_timeAgo(room.createdAt!)}' : ''}${room.district != null && room.town != null ? ' • ${room.town}, ${room.district}' : ''}',
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => RoomDetailPage(room: room))),
+        child: SizedBox(
+          height: 110,
+          child: Row(
+            children: [
+              AspectRatio(
+                aspectRatio: 4 / 3,
+                child: Hero(
+                  tag: '$heroBase-0',
+                  child: Container(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: imageWidget,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        room.title,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      if ((room.town != null && room.town!.isNotEmpty) || (room.district != null && room.district!.isNotEmpty))
+                        Text(
+                          '${room.town ?? ''}${(room.town != null && room.district != null) ? ', ' : ''}${room.district ?? ''}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          Text('රු. ${room.price}', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
+                          const SizedBox(width: 8),
+                          if (room.createdAt != null)
+                            Text(_timeAgo(room.createdAt!), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              )
+            ],
+          ),
         ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => RoomDetailPage(room: room))),
       ),
     );
   }

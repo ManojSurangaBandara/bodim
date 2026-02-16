@@ -26,6 +26,20 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Room Listings'),
         actions: [
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: AppState.instance.themeMode,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark;
+              final icon = isDark ? Icons.nightlight_round : Icons.wb_sunny;
+              final tooltip = isDark ? 'Dark' : 'Light';
+              return IconButton(
+                icon: Icon(icon),
+                tooltip: 'Theme: $tooltip',
+                onPressed: () => AppState.instance.cycleThemeMode(),
+              );
+            },
+          ),
+
           ValueListenableBuilder(
             valueListenable: app.currentUser,
             builder: (context, user, child) {
@@ -105,20 +119,24 @@ class _HomePageState extends State<HomePage> {
             maxPrice = priceList.reduce((a, b) => a > b ? a : b);
           }
 
+          // flow-safe aliases used below so the analyzer has non-null locals
+          final int minP = minPrice ?? 0;
+          final int maxP = maxPrice ?? 0;
+
           final RangeValues? effectivePriceRange = priceList.isNotEmpty
               ? RangeValues(
                   (_priceRange != null)
                       ? _priceRange!.start.clamp(
-                          minPrice!.toDouble(),
-                          maxPrice!.toDouble(),
+                          minP.toDouble(),
+                          maxP.toDouble(),
                         )
-                      : minPrice!.toDouble(),
+                      : minP.toDouble(),
                   (_priceRange != null)
                       ? _priceRange!.end.clamp(
-                          minPrice!.toDouble(),
-                          maxPrice!.toDouble(),
+                          minP.toDouble(),
+                          maxP.toDouble(),
                         )
-                      : maxPrice!.toDouble(),
+                      : maxP.toDouble(),
                 )
               : null;
 
@@ -293,12 +311,11 @@ class _HomePageState extends State<HomePage> {
         valueListenable: app.currentUser,
         builder: (context, user, child) {
           if (user == null) return const SizedBox.shrink();
-          return FloatingActionButton(
-            onPressed: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const AddPostPage())),
+          return FloatingActionButton.extended(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddPostPage())),
             tooltip: 'Add Post',
-            child: const Icon(Icons.add),
+            icon: const Icon(Icons.add),
+            label: const Text('Add'),
           );
         },
       ),

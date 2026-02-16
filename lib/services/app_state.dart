@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../models/user.dart';
 import '../models/room.dart';
@@ -9,6 +9,7 @@ class AppState {
 
   final ValueNotifier<User?> currentUser = ValueNotifier<User?>(null);
   final ValueNotifier<List<Room>> rooms = ValueNotifier<List<Room>>([]);
+  final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
 
   // in-memory mirror of registered users (backed by Hive box)
   final List<User> registered = [];
@@ -35,6 +36,14 @@ class AppState {
       } catch (_) {
         currentUser.value = null;
       }
+    }
+
+    // load persisted theme mode if any (only 'light'|'dark' supported now)
+    final storedTheme = appBox.get('themeMode') as String?;
+    if (storedTheme == 'dark') {
+      themeMode.value = ThemeMode.dark;
+    } else {
+      themeMode.value = ThemeMode.light;
     }
 
     // listen to Hive changes and keep notifier in sync
@@ -101,5 +110,19 @@ class AppState {
       Hive.box<Room>('rooms').putAt(index, newRoom);
       // rooms notifier will update via the box watcher
     }
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    themeMode.value = mode;
+    final appBox = Hive.box('app');
+    final s = mode == ThemeMode.dark ? 'dark' : 'light';
+    appBox.put('themeMode', s);
+  }
+
+  /// Cycle theme mode: Light <-> Dark
+  void cycleThemeMode() {
+    final current = themeMode.value;
+    final next = (current == ThemeMode.dark) ? ThemeMode.light : ThemeMode.dark;
+    setThemeMode(next);
   }
 }

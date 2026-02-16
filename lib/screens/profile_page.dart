@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/app_state.dart';
-import '../models/user.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -87,11 +86,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: 8),
+            CircleAvatar(
+              radius: 36,
+              child: Text(user.email.substring(0, 1).toUpperCase()),
+            ),
+            const SizedBox(height: 12),
             Text(
               'Email: ${user.email}',
               style: Theme.of(context).textTheme.titleMedium,
@@ -106,12 +111,34 @@ class _ProfilePageState extends State<ProfilePage> {
               controller: _phoneCtl,
               decoration: const InputDecoration(labelText: 'Phone'),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveProfile,
-              child: const Text('Save Profile'),
+            const SizedBox(height: 12),
+            ValueListenableBuilder<ThemeMode>(
+              valueListenable: AppState.instance.themeMode,
+              builder: (context, mode, _) {
+                final safeMode = mode == ThemeMode.dark ? ThemeMode.dark : ThemeMode.light;
+                return DropdownButtonFormField<ThemeMode>(
+                  value: safeMode,
+                  decoration: const InputDecoration(labelText: 'Theme'),
+                  items: const [
+                    DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
+                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
+                  ],
+                  onChanged: (m) {
+                    if (m != null) AppState.instance.setThemeMode(m);
+                  },
+                );
+              },
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 8),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saveProfile,
+                child: const Text('Save Profile'),
+              ),
+            ),
+            const SizedBox(height: 32),
             const Text(
               'Change Password',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -137,9 +164,12 @@ class _ProfilePageState extends State<ProfilePage> {
               obscureText: true,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _changePassword,
-              child: const Text('Change Password'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _changePassword,
+                child: const Text('Change Password'),
+              ),
             ),
           ],
         ),
