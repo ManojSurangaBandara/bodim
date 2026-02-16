@@ -16,6 +16,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String? _selectedDistrict;
   String? _selectedTown;
+  RangeValues? _priceRange;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +85,44 @@ class _HomePageState extends State<HomePage> {
           }.toList();
           towns.sort();
 
-          // filtered list
+          // --- price parsing / range preparation for slider & filtering ---
+          int? parsePrice(String? s) {
+            if (s == null) return null;
+            final digits = s.replaceAll(RegExp(r'[^0-9]'), '');
+            if (digits.isEmpty) return null;
+            return int.tryParse(digits);
+          }
+
+          final priceList = allRooms
+              .map((r) => parsePrice(r.price))
+              .whereType<int>()
+              .toList();
+
+          int? minPrice;
+          int? maxPrice;
+          if (priceList.isNotEmpty) {
+            minPrice = priceList.reduce((a, b) => a < b ? a : b);
+            maxPrice = priceList.reduce((a, b) => a > b ? a : b);
+          }
+
+          final RangeValues? effectivePriceRange = priceList.isNotEmpty
+              ? RangeValues(
+                  (_priceRange != null)
+                      ? _priceRange!.start.clamp(
+                          minPrice!.toDouble(),
+                          maxPrice!.toDouble(),
+                        )
+                      : minPrice!.toDouble(),
+                  (_priceRange != null)
+                      ? _priceRange!.end.clamp(
+                          minPrice!.toDouble(),
+                          maxPrice!.toDouble(),
+                        )
+                      : maxPrice!.toDouble(),
+                )
+              : null;
+
+          // filtered list (now includes price range when set)
           final filtered = allRooms.where((r) {
             if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
               if (r.district != _selectedDistrict) return false;
@@ -92,6 +130,16 @@ class _HomePageState extends State<HomePage> {
             if (_selectedTown != null && _selectedTown!.isNotEmpty) {
               if (r.town != _selectedTown) return false;
             }
+
+            if (effectivePriceRange != null) {
+              final p = parsePrice(r.price);
+              if (p == null)
+                return false; // hide unparseable-priced items when filtering
+              if (p < effectivePriceRange.start.round() ||
+                  p > effectivePriceRange.end.round())
+                return false;
+            }
+
             return true;
           }).toList();
 
@@ -176,12 +224,53 @@ class _HomePageState extends State<HomePage> {
                         setState(() {
                           _selectedDistrict = null;
                           _selectedTown = null;
+                          _priceRange = null;
                         });
                       },
                     ),
                   ],
                 ),
               ),
+
+              // Price filter (RangeSlider) — visible only when numeric prices exist
+              if (priceList.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Price (රු./month)',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      RangeSlider(
+                        values: effectivePriceRange!,
+                        min: minPrice!.toDouble(),
+                        max: maxPrice!.toDouble(),
+                        labels: RangeLabels(
+                          '${effectivePriceRange.start.round()}',
+                          '${effectivePriceRange.end.round()}',
+                        ),
+                        onChanged: (v) {
+                          setState(() {
+                            _priceRange = v;
+                          });
+                        },
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Min: රු. ${effectivePriceRange.start.round()}'),
+                          Text('Max: රු. ${effectivePriceRange.end.round()}'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
               Expanded(
                 child: filtered.isEmpty
                     ? const Center(
