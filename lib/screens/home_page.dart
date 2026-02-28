@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/app_state.dart';
 import '../models/room.dart';
 import '../widgets/room_card.dart';
+import '../widgets/pressable_scale.dart';
 import 'login_page.dart';
 import 'add_post_page.dart';
 import 'profile_page.dart';
@@ -311,11 +312,13 @@ class _HomePageState extends State<HomePage> {
         valueListenable: app.currentUser,
         builder: (context, user, child) {
           if (user == null) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddPostPage())),
-            tooltip: 'Add Post',
-            icon: const Icon(Icons.add),
-            label: const Text('Add'),
+          return PressableScale(
+            child: FloatingActionButton.extended(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddPostPage())),
+              tooltip: 'Add Post',
+              icon: const Icon(Icons.add),
+              label: const Text('Add'),
+            ),
           );
         },
       ),

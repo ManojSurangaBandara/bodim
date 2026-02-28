@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/app_state.dart';
 import 'register_page.dart';
+import '../widgets/pressable_scale.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -50,11 +51,13 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _login,
-                child: _loading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Login'),
+              child: PressableScale(
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _login,
+                  child: _loading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Login'),
+                ),
               ),
             ),
             const SizedBox(height: 12),

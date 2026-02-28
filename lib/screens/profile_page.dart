@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/app_state.dart';
+import '../widgets/pressable_scale.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -133,9 +134,11 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _saveProfile,
-                child: const Text('Save Profile'),
+              child: PressableScale(
+                child: ElevatedButton(
+                  onPressed: _saveProfile,
+                  child: const Text('Save Profile'),
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -166,9 +169,11 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _changePassword,
-                child: const Text('Change Password'),
+              child: PressableScale(
+                child: ElevatedButton(
+                  onPressed: _changePassword,
+                  child: const Text('Change Password'),
+                ),
               ),
             ),
           ],

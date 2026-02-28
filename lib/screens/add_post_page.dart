@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../widgets/pressable_scale.dart';
+
 import '../models/room.dart';
 import '../services/app_state.dart';
 
@@ -621,10 +623,12 @@ class _AddPostPageState extends State<AddPostPage> {
               spacing: 12,
               runSpacing: 8,
               children: [
-                ElevatedButton.icon(
-                  onPressed: _pickImages,
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('Add Images'),
+                PressableScale(
+                  child: ElevatedButton.icon(
+                    onPressed: _pickImages,
+                    icon: const Icon(Icons.photo_library),
+                    label: const Text('Add Images'),
+                  ),
                 ),
                 if (_localImagePaths.isNotEmpty)
                   TextButton(
@@ -636,7 +640,9 @@ class _AddPostPageState extends State<AddPostPage> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(onPressed: _submit, child: const Text('Post')),
+              child: PressableScale(
+                child: ElevatedButton(onPressed: _submit, child: const Text('Post')),
+              ),
             ),
           ],
         ),

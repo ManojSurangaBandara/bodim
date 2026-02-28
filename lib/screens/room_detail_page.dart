@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/room.dart';
 import '../services/app_state.dart';
 import 'add_post_page.dart';
+import '../widgets/pressable_scale.dart';
 
 class RoomDetailPage extends StatefulWidget {
   final Room room;
@@ -372,46 +373,52 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed:
-                              widget.room.contact == null ||
-                                  widget.room.contact!.isEmpty
-                              ? null
-                              : () => _call(widget.room.contact!),
-                          icon: const Icon(Icons.phone),
-                          label: const Text('Call'),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
+                        child: PressableScale(
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                widget.room.contact == null ||
+                                    widget.room.contact!.isEmpty
+                                ? null
+                                : () => _call(widget.room.contact!),
+                            icon: const Icon(Icons.phone),
+                            label: const Text('Call'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(48),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed:
-                              widget.room.contact == null ||
-                                  widget.room.contact!.isEmpty
-                              ? null
-                              : () => _sms(widget.room.contact!),
-                          icon: const Icon(Icons.message),
-                          label: const Text('SMS'),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
+                        child: PressableScale(
+                          child: OutlinedButton.icon(
+                            onPressed:
+                                widget.room.contact == null ||
+                                    widget.room.contact!.isEmpty
+                                ? null
+                                : () => _sms(widget.room.contact!),
+                            icon: const Icon(Icons.message),
+                            label: const Text('SMS'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(48),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed:
-                              widget.room.contact == null ||
-                                  widget.room.contact!.isEmpty
-                              ? null
-                              : () => _whatsapp(widget.room.contact!),
-                          icon: const Icon(Icons.chat),
-                          label: const Text('WhatsApp'),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
+                        child: PressableScale(
+                          child: OutlinedButton.icon(
+                            onPressed:
+                                widget.room.contact == null ||
+                                    widget.room.contact!.isEmpty
+                                ? null
+                                : () => _whatsapp(widget.room.contact!),
+                            icon: const Icon(Icons.chat),
+                            label: const Text('WhatsApp'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(48),
+                            ),
                           ),
                         ),
                       ),
