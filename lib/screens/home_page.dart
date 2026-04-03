@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Room Listings'),
+        title: null,
         actions: [
           ValueListenableBuilder<ThemeMode>(
             valueListenable: AppState.instance.themeMode,
@@ -133,10 +133,7 @@ class _HomePageState extends State<HomePage> {
                         )
                       : minP.toDouble(),
                   (_priceRange != null)
-                      ? _priceRange!.end.clamp(
-                          minP.toDouble(),
-                          maxP.toDouble(),
-                        )
+                      ? _priceRange!.end.clamp(minP.toDouble(), maxP.toDouble())
                       : maxP.toDouble(),
                 )
               : null;
@@ -314,7 +311,9 @@ class _HomePageState extends State<HomePage> {
           if (user == null) return const SizedBox.shrink();
           return PressableScale(
             child: FloatingActionButton.extended(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddPostPage())),
+              onPressed: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AddPostPage())),
               tooltip: 'Add Post',
               icon: const Icon(Icons.add),
               label: const Text('Add'),
