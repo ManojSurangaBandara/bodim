@@ -739,49 +739,41 @@ class _AddPostPageState extends State<AddPostPage> {
                               );
                             },
                           )
-                        : Image.file(File(p), fit: BoxFit.cover);
-                    return Container(
-                      key: ValueKey(p),
-                      margin: const EdgeInsets.only(right: 8),
-                      width: 140,
-                      child: Stack(
-                        children: [
-                          Positioned.fill(child: imageWidget),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.45),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                iconSize: 16,
-                                color: Theme.of(context).colorScheme.onSurface,
-                                icon: const Icon(Icons.close),
-                                onPressed: () =>
-                                    setState(() => _localImagePaths.removeAt(i)),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 4,
-                            left: 4,
-                            child: ReorderableDragStartListener(
-                              index: i,
+                        : Image.file(
+                            File(p),
+                            fit: BoxFit.cover,
+                            cacheWidth: 400,
+                            cacheHeight: 400,
+                          );
+                    return ReorderableDelayedDragStartListener(
+                      key: ValueKey('$p-$i'),
+                      index: i,
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        width: 140,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(child: imageWidget),
+                            Positioned(
+                              top: 4,
+                              right: 4,
                               child: CircleAvatar(
                                 radius: 14,
-                                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
-                                child: Icon(
-                                  Icons.drag_handle,
-                                  size: 16,
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.45),
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  iconSize: 16,
                                   color: Theme.of(context).colorScheme.onSurface,
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () =>
+                                      setState(() => _localImagePaths.removeAt(i)),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
