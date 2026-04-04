@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../services/app_state.dart';
 import '../models/room.dart';
@@ -18,6 +21,65 @@ class _HomePageState extends State<HomePage> {
   String? _selectedDistrict;
   String? _selectedTown;
   RangeValues? _priceRange;
+  bool _isOffline = false;
+  bool _showBackOnline = false;
+  Timer? _connectivityTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnectivity();
+    _connectivityTimer = Timer.periodic(
+      const Duration(seconds: 8),
+      (_) => _checkConnectivity(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _connectivityTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    bool connected = false;
+    try {
+      final result = await InternetAddress.lookup('example.com').timeout(
+        const Duration(seconds: 5),
+      );
+      connected = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      connected = false;
+    }
+
+    if (!mounted) return;
+
+    if (connected) {
+      if (_isOffline) {
+        setState(() {
+          _isOffline = false;
+          _showBackOnline = true;
+        });
+        Future.delayed(const Duration(seconds: 3), () {
+          if (!mounted) return;
+          setState(() {
+            _showBackOnline = false;
+          });
+        });
+      }
+    } else {
+      if (!_isOffline) {
+        setState(() {
+          _isOffline = true;
+          _showBackOnline = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _retryConnectivity() async {
+    await _checkConnectivity();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,9 +139,11 @@ class _HomePageState extends State<HomePage> {
       ),
 
       // body: add location filter above the list
-      body: ValueListenableBuilder<List>(
-        valueListenable: app.rooms,
-        builder: (context, rooms, child) {
+      body: Container(
+        color: _isOffline ? Colors.red.shade50 : null,
+        child: ValueListenableBuilder<List>(
+          valueListenable: app.rooms,
+          builder: (context, rooms, child) {
           final allRooms = List.of(rooms.cast<Room>());
 
           // compute unique districts and towns
@@ -161,6 +225,31 @@ class _HomePageState extends State<HomePage> {
 
           return Column(
             children: [
+              if (_isOffline || _showBackOnline)
+                Container(
+                  width: double.infinity,
+                  color: _isOffline
+                      ? Colors.red.shade200
+                      : Colors.green.shade200,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _isOffline ? 'Offline — check your connection' : 'Back online',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                      if (_isOffline)
+                        TextButton(
+                          onPressed: _retryConnectivity,
+                          child: const Text('Retry'),
+                        ),
+                    ],
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -304,6 +393,7 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+    ),
 
       floatingActionButton: ValueListenableBuilder(
         valueListenable: app.currentUser,

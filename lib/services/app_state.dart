@@ -118,28 +118,55 @@ class AppState {
     await _auth.signOut();
   }
 
-  Future<void> addRoom(Room room) async {
+  Future<bool> addRoom(Room room) async {
     final user = currentUser.value;
     if (user == null) {
       throw StateError('User must be signed in to add a room');
     }
-    await _firestore.collection('rooms').add(room.toMap());
+    try {
+      await _firestore.collection('rooms').add(room.toMap()).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw TimeoutException('Add room timed out'),
+      );
+      return true;
+    } catch (e, st) {
+      debugPrint('Failed to add room: $e\n$st');
+      return false;
+    }
   }
 
-  Future<void> deleteRoom(Room room) async {
+  Future<bool> deleteRoom(Room room) async {
     final user = currentUser.value;
     if (user == null || room.creatorEmail != user.email || room.id == null) {
-      return;
+      return false;
     }
-    await _firestore.collection('rooms').doc(room.id).delete();
+    try {
+      await _firestore.collection('rooms').doc(room.id).delete().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw TimeoutException('Delete room timed out'),
+      );
+      return true;
+    } catch (e, st) {
+      debugPrint('Failed to delete room: $e\n$st');
+      return false;
+    }
   }
 
-  Future<void> updateRoom(Room oldRoom, Room newRoom) async {
+  Future<bool> updateRoom(Room oldRoom, Room newRoom) async {
     final user = currentUser.value;
     if (user == null || oldRoom.creatorEmail != user.email || oldRoom.id == null) {
-      return;
+      return false;
     }
-    await _firestore.collection('rooms').doc(oldRoom.id!).update(newRoom.toMap());
+    try {
+      await _firestore.collection('rooms').doc(oldRoom.id!).update(newRoom.toMap()).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw TimeoutException('Update room timed out'),
+      );
+      return true;
+    } catch (e, st) {
+      debugPrint('Failed to update room: $e\n$st');
+      return false;
+    }
   }
 
   void setThemeMode(ThemeMode mode) {

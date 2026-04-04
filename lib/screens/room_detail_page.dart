@@ -241,7 +241,27 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
 
                                 Widget img;
                                 if (src.startsWith('http')) {
-                                  img = Image.network(src, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+                                  img = Image.network(
+                                    src,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(child: CircularProgressIndicator());
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey.shade200,
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.broken_image,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
                                 } else {
                                   final f = File(src);
                                   img = f.existsSync()
@@ -496,7 +516,25 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
               final src = widget.images[i];
               Widget image;
               if (src.startsWith('http')) {
-                image = Image.network(src, fit: BoxFit.contain);
+                image = Image.network(
+                  src,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Theme.of(context).colorScheme.background,
+                      child: Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Theme.of(context).colorScheme.onBackground,
+                        ),
+                      ),
+                    );
+                  },
+                );
               } else {
                 final f = File(src);
                 image = f.existsSync()

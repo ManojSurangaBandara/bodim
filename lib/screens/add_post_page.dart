@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
@@ -570,6 +571,17 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() {});
   }
 
+  Future<bool> _hasNetworkConnection() async {
+    try {
+      final result = await InternetAddress.lookup('example.com').timeout(
+        const Duration(seconds: 5),
+      );
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<File> _compressImageFile(File file) async {
     try {
       final tempDir = await getTemporaryDirectory();
@@ -597,8 +609,14 @@ class _AddPostPageState extends State<AddPostPage> {
     final uploadFile = await _compressImageFile(file);
     final filename = 'rooms/${DateTime.now().millisecondsSinceEpoch}-${uploadFile.path.split(Platform.pathSeparator).last}';
     final ref = FirebaseStorage.instance.ref(filename);
-    await ref.putFile(uploadFile);
-    return ref.getDownloadURL();
+    await ref.putFile(uploadFile).timeout(
+      const Duration(seconds: 45),
+      onTimeout: () => throw TimeoutException('Image upload timed out'),
+    );
+    return await ref.getDownloadURL().timeout(
+      const Duration(seconds: 20),
+      onTimeout: () => throw TimeoutException('Failed to get image URL'),
+    );
   }
 
   Future<List<String>> _resolveImageUrls() async {
@@ -639,8 +657,31 @@ class _AddPostPageState extends State<AddPostPage> {
       return;
     }
 
+    final hasNetwork = await _hasNetworkConnection();
+    if (!hasNetwork) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No internet connection. Please try again when you are online.'),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
-    final imageUrls = await _resolveImageUrls();
+    late final List<String> imageUrls;
+    try {
+      imageUrls = await _resolveImageUrls();
+    } catch (e, st) {
+      debugPrint('Image upload failed: $e\n$st');
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to upload images. Check your connection and try again.'),
+        ),
+      );
+      return;
+    }
 
     final newRoom = Room(
       title: t,
@@ -655,13 +696,22 @@ class _AddPostPageState extends State<AddPostPage> {
       id: widget.roomToEdit?.id,
     );
 
-    if (widget.roomToEdit != null) {
-      await AppState.instance.updateRoom(widget.roomToEdit!, newRoom);
-    } else {
-      await AppState.instance.addRoom(newRoom);
-    }
+    final success = widget.roomToEdit != null
+        ? await AppState.instance.updateRoom(widget.roomToEdit!, newRoom)
+        : await AppState.instance.addRoom(newRoom);
+
     if (!mounted) return;
     setState(() => _isSubmitting = false);
+
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save the ad. Please check your internet connection and try again.'),
+        ),
+      );
+      return;
+    }
+
     Navigator.of(context).pop();
   }
 

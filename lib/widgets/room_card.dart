@@ -31,7 +31,17 @@ class RoomCard extends StatelessWidget {
     if (room.images != null && room.images!.isNotEmpty) {
       final first = room.images!.first;
       if (first.startsWith('http')) {
-        imageWidget = Image.network(first, fit: BoxFit.cover);
+        imageWidget = Image.network(
+          first,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return const Center(child: CircularProgressIndicator());
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(Icons.broken_image, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant);
+          },
+        );
       } else {
         final f = File(first);
         imageWidget = f.existsSync()
