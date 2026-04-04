@@ -1,7 +1,12 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import '../models/user.dart';
+
 import '../models/room.dart';
+import '../models/user.dart';
 
 class AppState {
   AppState._internal();
@@ -11,34 +16,16 @@ class AppState {
   final ValueNotifier<List<Room>> rooms = ValueNotifier<List<Room>>([]);
   final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
 
-  // in-memory mirror of registered users (backed by Hive box)
-  final List<User> registered = [];
+  final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Call from main before runApp
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _roomsSub;
+  StreamSubscription<fb_auth.User?>? _authSub;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _profileSub;
+
   Future<void> init() async {
-    final usersBox = Hive.box<User>('users');
-    final roomsBox = Hive.box<Room>('rooms');
     final appBox = Hive.box('app');
 
-    // load users
-    registered.clear();
-    registered.addAll(usersBox.values.toList());
-
-    // load rooms into notifier
-    rooms.value = roomsBox.values.toList();
-
-    // load current user if any
-    final currentEmail = appBox.get('currentUserEmail') as String?;
-    if (currentEmail != null) {
-      try {
-        final u = registered.firstWhere((u) => u.email == currentEmail);
-        currentUser.value = u;
-      } catch (_) {
-        currentUser.value = null;
-      }
-    }
-
-    // load persisted theme mode if any (only 'light'|'dark' supported now)
     final storedTheme = appBox.get('themeMode') as String?;
     if (storedTheme == 'dark') {
       themeMode.value = ThemeMode.dark;
@@ -46,70 +33,113 @@ class AppState {
       themeMode.value = ThemeMode.light;
     }
 
-    // listen to Hive changes and keep notifier in sync
-    roomsBox.watch().listen((event) {
-      rooms.value = roomsBox.values.toList();
+    _authSub = _auth.authStateChanges().listen(_handleAuthStateChanged);
+    _listenRooms();
+  }
+
+  void _handleAuthStateChanged(fb_auth.User? authUser) {
+    _profileSub?.cancel();
+    if (authUser == null) {
+      currentUser.value = null;
+      return;
+    }
+
+    final profileDoc = _firestore.collection('users').doc(authUser.uid);
+    _profileSub = profileDoc.snapshots().listen((snapshot) {
+      final data = snapshot.data();
+      if (data != null) {
+        currentUser.value = User(
+          authUser.email ?? '',
+          name: data['name'] as String?,
+          phone: data['phone'] as String?,
+        );
+      } else {
+        final user = User(authUser.email ?? '');
+        currentUser.value = user;
+        profileDoc.set(
+          {
+            'email': authUser.email,
+            'name': null,
+            'phone': null,
+          },
+          SetOptions(merge: true),
+        );
+      }
+    }, onError: (_) {
+      currentUser.value = User(authUser.email ?? '');
     });
   }
 
-  bool login(String email, String password) {
+  void _listenRooms() {
+    _roomsSub?.cancel();
+    _roomsSub = _firestore
+        .collection('rooms')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      rooms.value = snapshot.docs
+          .map((doc) => Room.fromMap(doc.data(), id: doc.id))
+          .toList();
+    });
+  }
+
+  Future<bool> login(String email, String password) async {
     try {
-      final user = registered.firstWhere(
-        (u) => u.email == email && u.password == password,
-      );
-      currentUser.value = user;
-      Hive.box('app').put('currentUserEmail', user.email);
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
       return true;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
 
-  bool register(String email, String password) {
-    if (registered.any((u) => u.email == email)) return false;
-    final u = User(email, password: password);
-    // persist
-    Hive.box<User>('users').put(email, u);
-    registered.add(u);
-    currentUser.value = u;
-    Hive.box('app').put('currentUserEmail', u.email);
-    return true;
+  Future<bool> register(String email, String password) async {
+    try {
+      final result = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final uid = result.user?.uid;
+      if (uid != null) {
+        await _firestore.collection('users').doc(uid).set(
+          {
+            'email': email,
+            'name': null,
+            'phone': null,
+          },
+        );
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
-  void logout() {
-    currentUser.value = null;
-    Hive.box('app').delete('currentUserEmail');
+  Future<void> logout() async {
+    await _auth.signOut();
   }
 
-  void addRoom(Room room) {
-    Hive.box<Room>('rooms').add(room);
-    // rooms notifier will update via the box watcher
-  }
-
-  void deleteRoom(Room room) {
+  Future<void> addRoom(Room room) async {
     final user = currentUser.value;
-    if (user == null || room.creatorEmail != user.email) {
-      // not logged in or not the creator
+    if (user == null) {
+      throw StateError('User must be signed in to add a room');
+    }
+    await _firestore.collection('rooms').add(room.toMap());
+  }
+
+  Future<void> deleteRoom(Room room) async {
+    final user = currentUser.value;
+    if (user == null || room.creatorEmail != user.email || room.id == null) {
       return;
     }
-    final index = rooms.value.indexOf(room);
-    if (index != -1) {
-      Hive.box<Room>('rooms').deleteAt(index);
-      // rooms notifier will update via the box watcher
-    }
+    await _firestore.collection('rooms').doc(room.id).delete();
   }
 
-  void updateRoom(Room oldRoom, Room newRoom) {
+  Future<void> updateRoom(Room oldRoom, Room newRoom) async {
     final user = currentUser.value;
-    if (user == null || oldRoom.creatorEmail != user.email) {
-      // not logged in or not the creator
+    if (user == null || oldRoom.creatorEmail != user.email || oldRoom.id == null) {
       return;
     }
-    final index = rooms.value.indexOf(oldRoom);
-    if (index != -1) {
-      Hive.box<Room>('rooms').putAt(index, newRoom);
-      // rooms notifier will update via the box watcher
-    }
+    await _firestore.collection('rooms').doc(oldRoom.id!).update(newRoom.toMap());
   }
 
   void setThemeMode(ThemeMode mode) {
@@ -119,10 +149,45 @@ class AppState {
     appBox.put('themeMode', s);
   }
 
+  Future<void> updateProfile({String? name, String? phone}) async {
+    final authUser = _auth.currentUser;
+    if (authUser == null) return;
+    await _firestore.collection('users').doc(authUser.uid).set(
+      {
+        'name': name,
+        'phone': phone,
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  Future<bool> changePassword(String current, String newPassword) async {
+    final authUser = _auth.currentUser;
+    if (authUser == null || authUser.email == null) return false;
+
+    try {
+      final credential = fb_auth.EmailAuthProvider.credential(
+        email: authUser.email!,
+        password: current,
+      );
+      await authUser.reauthenticateWithCredential(credential);
+      await authUser.updatePassword(newPassword);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Cycle theme mode: Light <-> Dark
   void cycleThemeMode() {
     final current = themeMode.value;
     final next = (current == ThemeMode.dark) ? ThemeMode.light : ThemeMode.dark;
     setThemeMode(next);
+  }
+
+  void dispose() {
+    _roomsSub?.cancel();
+    _authSub?.cancel();
+    _profileSub?.cancel();
   }
 }

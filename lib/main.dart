@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
-import 'theme.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'models/user.dart';
-import 'models/room.dart';
+import 'theme.dart';
 import 'screens/home_page.dart';
 import 'services/app_state.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Firebase.initializeApp();
   await Hive.initFlutter();
-  Hive.registerAdapter(UserAdapter());
-  Hive.registerAdapter(RoomAdapter());
-
-  await Hive.openBox<User>('users');
-  await Hive.openBox<Room>('rooms');
   await Hive.openBox('app');
 
   await AppState.instance.init();

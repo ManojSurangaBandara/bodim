@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
 
 part 'room.g.dart';
@@ -32,6 +33,8 @@ class Room extends HiveObject {
   @HiveField(8)
   final String? town;
 
+  final String? id;
+
   Room({
     required this.title,
     required this.price,
@@ -42,5 +45,43 @@ class Room extends HiveObject {
     this.createdAt,
     this.district,
     this.town,
+    this.id,
   });
+
+  factory Room.fromMap(Map<String, dynamic> map, {String? id}) {
+    final createdAtField = map['createdAt'];
+    DateTime? createdAt;
+    if (createdAtField is Timestamp) {
+      createdAt = createdAtField.toDate();
+    } else if (createdAtField is DateTime) {
+      createdAt = createdAtField;
+    }
+
+    return Room(
+      id: id,
+      title: map['title'] as String? ?? '',
+      price: map['price'] as String? ?? '',
+      images: (map['images'] as List<dynamic>?)?.cast<String>(),
+      description: map['description'] as String?,
+      contact: map['contact'] as String?,
+      creatorEmail: map['creatorEmail'] as String?,
+      createdAt: createdAt,
+      district: map['district'] as String?,
+      town: map['town'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'price': price,
+      'images': images,
+      'description': description,
+      'contact': contact,
+      'creatorEmail': creatorEmail,
+      'createdAt': createdAt ?? FieldValue.serverTimestamp(),
+      'district': district,
+      'town': town,
+    };
+  }
 }

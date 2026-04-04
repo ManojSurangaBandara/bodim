@@ -34,45 +34,46 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  void _saveProfile() {
-    final user = AppState.instance.currentUser.value!;
-    user.name = _nameCtl.text.trim().isEmpty ? null : _nameCtl.text.trim();
-    user.phone = _phoneCtl.text.trim().isEmpty ? null : _phoneCtl.text.trim();
-    user.save(); // save to Hive
+  Future<void> _saveProfile() async {
+    final name = _nameCtl.text.trim().isEmpty ? null : _nameCtl.text.trim();
+    final phone = _phoneCtl.text.trim().isEmpty ? null : _phoneCtl.text.trim();
+    await AppState.instance.updateProfile(name: name, phone: phone);
+    if (!mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Profile updated')));
   }
 
-  void _changePassword() {
+  Future<void> _changePassword() async {
     final current = _currentPasswordCtl.text.trim();
     final newP = _newPasswordCtl.text.trim();
     final confirm = _confirmPasswordCtl.text.trim();
 
     if (current.isEmpty || newP.isEmpty || confirm.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('All fields required')));
       return;
     }
 
-    final user = AppState.instance.currentUser.value!;
-    if (user.password != current) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Current password incorrect')),
-      );
-      return;
-    }
-
     if (newP != confirm) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('New passwords do not match')),
       );
       return;
     }
 
-    user.password = newP;
-    user.save();
+    final ok = await AppState.instance.changePassword(current, newP);
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Current password incorrect or cannot update')),
+      );
+      return;
+    }
+
     _currentPasswordCtl.clear();
     _newPasswordCtl.clear();
     _confirmPasswordCtl.clear();

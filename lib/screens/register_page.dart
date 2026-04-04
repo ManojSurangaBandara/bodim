@@ -14,9 +14,10 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passCtl = TextEditingController();
   bool _loading = false;
 
-  void _register() {
+  Future<void> _register() async {
     setState(() => _loading = true);
-    final ok = AppState.instance.register(_emailCtl.text.trim(), _passCtl.text);
+    final ok = await AppState.instance.register(_emailCtl.text.trim(), _passCtl.text);
+    if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
       Navigator.of(context).pop(); // go back to login/home

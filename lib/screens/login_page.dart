@@ -15,10 +15,10 @@ class _LoginPageState extends State<LoginPage> {
   final _passCtl = TextEditingController();
   bool _loading = false;
 
-  void _login() async {
+  Future<void> _login() async {
     setState(() => _loading = true);
-    final app = AppState.instance;
-    final ok = app.login(_emailCtl.text.trim(), _passCtl.text);
+    final ok = await AppState.instance.login(_emailCtl.text.trim(), _passCtl.text);
+    if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
       Navigator.of(context).pop();

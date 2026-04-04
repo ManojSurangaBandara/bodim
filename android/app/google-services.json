@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "277545689639",
+    "project_id": "bodim-be379",
+    "storage_bucket": "bodim-be379.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:277545689639:android:f43d97aad3da8537436402",
+        "android_client_info": {
+          "package_name": "com.example.bodim"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCO-ypqiDBGrnpM5TsgPgTnqJvGN59nooI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

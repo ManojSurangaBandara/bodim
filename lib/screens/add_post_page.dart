@@ -553,7 +553,7 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() {});
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final t = _titleCtl.text.trim();
     final p = _priceCtl.text.trim();
     final c = _contactCtl.text.trim();
@@ -567,23 +567,36 @@ class _AddPostPageState extends State<AddPostPage> {
       ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       return;
     }
+
+    final currentUser = AppState.instance.currentUser.value;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to add a post')),
+      );
+      return;
+    }
+
     final newRoom = Room(
       title: t,
       price: p,
       contact: c,
-      creatorEmail: AppState.instance.currentUser.value!.email,
+      creatorEmail: currentUser.email,
       createdAt: widget.roomToEdit?.createdAt ?? DateTime.now(),
       images: _localImagePaths.isNotEmpty ? List.from(_localImagePaths) : null,
       description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
       district: _selectedDistrict,
       town: _selectedTown,
+      id: widget.roomToEdit?.id,
     );
+
     if (widget.roomToEdit != null) {
-      AppState.instance.updateRoom(widget.roomToEdit!, newRoom);
+      await AppState.instance.updateRoom(widget.roomToEdit!, newRoom);
     } else {
-      AppState.instance.addRoom(newRoom);
+      await AppState.instance.addRoom(newRoom);
     }
-    Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override

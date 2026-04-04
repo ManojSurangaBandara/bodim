@@ -124,7 +124,8 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     );
   }
 
-  void _deleteRoom() {
+  Future<void> _deleteRoom() async {
+    final parentNavigator = Navigator.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -136,10 +137,10 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              AppState.instance.deleteRoom(widget.room);
+            onPressed: () async {
+              await AppState.instance.deleteRoom(widget.room);
               Navigator.of(ctx).pop();
-              Navigator.of(context).pop(); // back to list
+              parentNavigator.pop(); // back to list
             },
             child: const Text('Delete'),
           ),
