@@ -19,8 +19,16 @@ class RoomDetailPage extends StatefulWidget {
 class _RoomDetailPageState extends State<RoomDetailPage> {
   int _page = 0;
 
+  Room get _currentRoom {
+    final rooms = AppState.instance.rooms.value;
+    return rooms.firstWhere(
+      (r) => r.id != null && r.id == widget.room.id,
+      orElse: () => widget.room,
+    );
+  }
+
   void _openFullScreen(int initialPage) {
-    final images = widget.room.images ?? [];
+    final images = _currentRoom.images ?? [];
     if (images.isEmpty) return;
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -138,7 +146,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           ),
           TextButton(
             onPressed: () async {
-              await AppState.instance.deleteRoom(widget.room);
+              await AppState.instance.deleteRoom(_currentRoom);
               Navigator.of(ctx).pop();
               parentNavigator.pop(); // back to list
             },
@@ -176,261 +184,262 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final images = widget.room.images ?? [];
-    final currentUser = AppState.instance.currentUser.value;
-    final canDelete =
-        currentUser != null && widget.room.creatorEmail == currentUser.email;
+    return ValueListenableBuilder<List<Room>>(
+      valueListenable: AppState.instance.rooms,
+      builder: (context, rooms, _) {
+        final room = rooms.firstWhere(
+          (r) => r.id != null && r.id == widget.room.id,
+          orElse: () => widget.room,
+        );
+        final images = room.images ?? [];
+        final currentUser = AppState.instance.currentUser.value;
+        final canDelete =
+            currentUser != null && room.creatorEmail == currentUser.email;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.room.title),
-        actions: canDelete
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AddPostPage(roomToEdit: widget.room),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: _deleteRoom,
-                ),
-              ]
-            : null,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Image carousel / placeholder
-            SizedBox(
-              height: 300,
-              child: images.isEmpty
-                  ? Container(
-                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.06),
-                      child: Center(
-                        child: Icon(Icons.home, size: 96, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(room.title),
+            actions: canDelete
+                ? [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AddPostPage(roomToEdit: room),
+                        ),
                       ),
-                    )
-                  : Stack(
-                      children: [
-                        PageView.builder(
-                          itemCount: images.length,
-                          onPageChanged: (i) => setState(() => _page = i),
-                          itemBuilder: (context, i) {
-                            final src = images[i];
-                            final heroTag = '${widget.room.title}-${widget.room.createdAt?.millisecondsSinceEpoch ?? widget.room.price}-$i';
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: _deleteRoom,
+                    ),
+                  ]
+                : null,
+          ),
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Image carousel / placeholder
+                SizedBox(
+                  height: 300,
+                  child: images.isEmpty
+                      ? Container(
+                          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.06),
+                          child: Center(
+                            child: Icon(Icons.home, size: 96, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ),
+                        )
+                      : Stack(
+                          children: [
+                            PageView.builder(
+                              itemCount: images.length,
+                              onPageChanged: (i) => setState(() => _page = i),
+                              itemBuilder: (context, i) {
+                                final src = images[i];
+                                final heroTag = '${room.title}-${room.createdAt?.millisecondsSinceEpoch ?? room.price}-$i';
 
-                            Widget img;
-                            if (src.startsWith('http')) {
-                              img = Image.network(src, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
-                            } else {
-                              final f = File(src);
-                              img = f.existsSync()
-                                  ? Image.file(f, fit: BoxFit.cover, width: double.infinity, height: double.infinity)
-                                  : Container(color: Colors.grey.shade200);
-                            }
+                                Widget img;
+                                if (src.startsWith('http')) {
+                                  img = Image.network(src, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+                                } else {
+                                  final f = File(src);
+                                  img = f.existsSync()
+                                      ? Image.file(f, fit: BoxFit.cover, width: double.infinity, height: double.infinity)
+                                      : Container(color: Colors.grey.shade200);
+                                }
 
-                            return GestureDetector(
-                              onTap: () => _openFullScreen(i),
-                              child: Hero(
-                                tag: heroTag,
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    img,
-                                    Positioned.fill(
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [Colors.transparent, Theme.of(context).colorScheme.onSurface.withOpacity(0.12)],
+                                return GestureDetector(
+                                  onTap: () => _openFullScreen(i),
+                                  child: Hero(
+                                    tag: heroTag,
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        img,
+                                        Positioned.fill(
+                                          child: DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                                colors: [Colors.transparent, Theme.of(context).colorScheme.onSurface.withOpacity(0.12)],
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                );
+                              },
+                            ),
+                            Positioned(
+                              bottom: 8,
+                              left: 0,
+                              right: 0,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(images.length, (i) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    width: _page == i ? 10 : 8,
+                                    height: _page == i ? 10 : 8,
+                                    decoration: BoxDecoration(
+                                      color: _page == i
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black12,
+                                          blurRadius: 2,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
                               ),
-                            );
-                          },
+                            ),
+                          ],
                         ),
-                        Positioned(
-                          bottom: 8,
-                          left: 0,
-                          right: 0,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(images.length, (i) {
-                              return Container(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                width: _page == i ? 10 : 8,
-                                height: _page == i ? 10 : 8,
-                                decoration: BoxDecoration(
-                                  color: _page == i
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 2,
-                                      offset: Offset(0, 1),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+                ),
 
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          widget.room.title,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ),
-                      Text(
-                        'රු. ${widget.room.price}',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(color: Theme.of(context).colorScheme.primary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (widget.room.description != null &&
-                      widget.room.description!.isNotEmpty)
-                    Text(
-                      widget.room.description!,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-
-                  if (widget.room.createdAt != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'Posted on: ${_formatDateTime(widget.room.createdAt!)}',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                    ),
-
-                  const SizedBox(height: 12),
-                  if (widget.room.contact != null &&
-                      widget.room.contact!.isNotEmpty)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.phone,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        SelectableText(
-                          widget.room.contact!,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-
-                  if (widget.room.district != null && widget.room.town != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Row(
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          Expanded(
+                            child: Text(
+                              room.title,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
                           ),
-                          const SizedBox(width: 8),
                           Text(
-                            '${widget.room.town}, ${widget.room.district}',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            'රු. ${room.price}',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(color: Theme.of(context).colorScheme.primary),
                           ),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      if (room.description != null && room.description!.isNotEmpty)
+                        Text(
+                          room.description!,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
 
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: PressableScale(
-                          child: ElevatedButton.icon(
-                            onPressed:
-                                widget.room.contact == null ||
-                                    widget.room.contact!.isEmpty
-                                ? null
-                                : () => _call(widget.room.contact!),
-                            icon: const Icon(Icons.phone),
-                            label: const Text('Call'),
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(48),
-                            ),
+                      if (room.createdAt != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Posted on: ${_formatDateTime(room.createdAt!)}',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: PressableScale(
-                          child: OutlinedButton.icon(
-                            onPressed:
-                                widget.room.contact == null ||
-                                    widget.room.contact!.isEmpty
-                                ? null
-                                : () => _sms(widget.room.contact!),
-                            icon: const Icon(Icons.message),
-                            label: const Text('SMS'),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(48),
+
+                      const SizedBox(height: 12),
+                      if (room.contact != null && room.contact!.isNotEmpty)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.phone,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
+                            const SizedBox(width: 8),
+                            SelectableText(
+                              room.contact!,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+
+                      if (room.district != null && room.town != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${room.town}, ${room.district}',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: PressableScale(
-                          child: OutlinedButton.icon(
-                            onPressed:
-                                widget.room.contact == null ||
-                                    widget.room.contact!.isEmpty
-                                ? null
-                                : () => _whatsapp(widget.room.contact!),
-                            icon: const Icon(Icons.chat),
-                            label: const Text('WhatsApp'),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(48),
+
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: PressableScale(
+                              child: ElevatedButton.icon(
+                                onPressed: room.contact == null || room.contact!.isEmpty
+                                    ? null
+                                    : () => _call(room.contact!),
+                                icon: const Icon(Icons.phone),
+                                label: const Text('Call'),
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(48),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: PressableScale(
+                              child: OutlinedButton.icon(
+                                onPressed: room.contact == null || room.contact!.isEmpty
+                                    ? null
+                                    : () => _sms(room.contact!),
+                                icon: const Icon(Icons.message),
+                                label: const Text('SMS'),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(48),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: PressableScale(
+                              child: OutlinedButton.icon(
+                                onPressed: room.contact == null || room.contact!.isEmpty
+                                    ? null
+                                    : () => _whatsapp(room.contact!),
+                                icon: const Icon(Icons.chat),
+                                label: const Text('WhatsApp'),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(48),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

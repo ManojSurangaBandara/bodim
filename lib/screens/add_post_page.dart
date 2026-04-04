@@ -703,11 +703,26 @@ class _AddPostPageState extends State<AddPostPage> {
                   itemCount: _localImagePaths.length,
                   itemBuilder: (context, i) {
                     final p = _localImagePaths[i];
+                    final imageWidget = p.startsWith('http')
+                        ? Image.network(
+                            p,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(child: CircularProgressIndicator());
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Theme.of(context).colorScheme.surfaceVariant,
+                                child: const Center(child: Icon(Icons.broken_image)),
+                              );
+                            },
+                          )
+                        : Image.file(File(p), fit: BoxFit.cover);
+
                     return Stack(
                       children: [
-                        Positioned.fill(
-                          child: Image.file(File(p), fit: BoxFit.cover),
-                        ),
+                        Positioned.fill(child: imageWidget),
                         Positioned(
                           top: 4,
                           right: 4,
