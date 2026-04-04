@@ -551,6 +551,19 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() {});
   }
 
+  Future<void> _captureImage() async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    _localImagePaths.add(picked.path);
+    setState(() {});
+  }
+
   Future<String?> _uploadLocalImage(String path) async {
     final file = File(path);
     if (!file.existsSync()) return null;
@@ -754,7 +767,14 @@ class _AddPostPageState extends State<AddPostPage> {
                   child: ElevatedButton.icon(
                     onPressed: _pickImages,
                     icon: const Icon(Icons.photo_library),
-                    label: const Text('Add Images'),
+                    label: const Text('Gallery'),
+                  ),
+                ),
+                PressableScale(
+                  child: ElevatedButton.icon(
+                    onPressed: _captureImage,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Camera'),
                   ),
                 ),
                 if (_localImagePaths.isNotEmpty)
