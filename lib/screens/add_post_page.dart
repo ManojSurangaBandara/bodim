@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../widgets/pressable_scale.dart';
 
@@ -24,6 +24,7 @@ class _AddPostPageState extends State<AddPostPage> {
   final _contactCtl = TextEditingController();
   final List<String> _localImagePaths = [];
   final ImagePicker _picker = ImagePicker();
+  bool _isSubmitting = false;
   String? _selectedDistrict;
   String? _selectedTown;
 
@@ -544,13 +545,34 @@ class _AddPostPageState extends State<AddPostPage> {
     );
     if (picked.isEmpty) return;
 
-    final appDir = await getApplicationDocumentsDirectory();
     for (final p in picked) {
-      final filename = '${DateTime.now().millisecondsSinceEpoch}-${p.name}';
-      final saved = await File(p.path).copy('${appDir.path}/$filename');
-      _localImagePaths.add(saved.path);
+      _localImagePaths.add(p.path);
     }
     setState(() {});
+  }
+
+  Future<String?> _uploadLocalImage(String path) async {
+    final file = File(path);
+    if (!file.existsSync()) return null;
+    final filename = 'rooms/${DateTime.now().millisecondsSinceEpoch}-${path.split(Platform.pathSeparator).last}';
+    final ref = FirebaseStorage.instance.ref(filename);
+    await ref.putFile(file);
+    return ref.getDownloadURL();
+  }
+
+  Future<List<String>> _resolveImageUrls() async {
+    final uploadPaths = <String>[];
+    for (final path in _localImagePaths) {
+      if (path.startsWith('http')) {
+        uploadPaths.add(path);
+        continue;
+      }
+      final url = await _uploadLocalImage(path);
+      if (url != null) {
+        uploadPaths.add(url);
+      }
+    }
+    return uploadPaths;
   }
 
   Future<void> _submit() async {
@@ -576,13 +598,16 @@ class _AddPostPageState extends State<AddPostPage> {
       return;
     }
 
+    setState(() => _isSubmitting = true);
+    final imageUrls = await _resolveImageUrls();
+
     final newRoom = Room(
       title: t,
       price: p,
       contact: c,
       creatorEmail: currentUser.email,
       createdAt: widget.roomToEdit?.createdAt ?? DateTime.now(),
-      images: _localImagePaths.isNotEmpty ? List.from(_localImagePaths) : null,
+      images: imageUrls.isNotEmpty ? imageUrls : null,
       description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
       district: _selectedDistrict,
       town: _selectedTown,
@@ -594,9 +619,9 @@ class _AddPostPageState extends State<AddPostPage> {
     } else {
       await AppState.instance.addRoom(newRoom);
     }
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -729,8 +754,14 @@ class _AddPostPageState extends State<AddPostPage> {
               width: double.infinity,
               child: PressableScale(
                 child: ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Post'),
+                  onPressed: _isSubmitting ? null : _submit,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Post'),
                 ),
               ),
             ),
