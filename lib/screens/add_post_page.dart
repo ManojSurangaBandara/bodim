@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../widgets/pressable_scale.dart';
 
@@ -568,12 +570,34 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() {});
   }
 
+  Future<File> _compressImageFile(File file) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final targetPath = '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}-${file.path.split(Platform.pathSeparator).last}';
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        file.absolute.path,
+        targetPath,
+        quality: 50,
+        minWidth: 720,
+        minHeight: 720,
+        keepExif: false,
+      );
+      if (compressedFile == null) return file;
+      return File((compressedFile as dynamic).path);
+    } catch (e, st) {
+      debugPrint('Image compression failed, using original file: $e\n$st');
+      return file;
+    }
+  }
+
   Future<String?> _uploadLocalImage(String path) async {
     final file = File(path);
     if (!file.existsSync()) return null;
-    final filename = 'rooms/${DateTime.now().millisecondsSinceEpoch}-${path.split(Platform.pathSeparator).last}';
+
+    final uploadFile = await _compressImageFile(file);
+    final filename = 'rooms/${DateTime.now().millisecondsSinceEpoch}-${uploadFile.path.split(Platform.pathSeparator).last}';
     final ref = FirebaseStorage.instance.ref(filename);
-    await ref.putFile(file);
+    await ref.putFile(uploadFile);
     return ref.getDownloadURL();
   }
 
