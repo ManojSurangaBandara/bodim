@@ -8,6 +8,7 @@ import '../widgets/room_card.dart';
 import '../widgets/pressable_scale.dart';
 import 'login_page.dart';
 import 'add_post_page.dart';
+import 'my_ads_page.dart';
 import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -119,16 +120,21 @@ class _HomePageState extends State<HomePage> {
                   onSelected: (v) {
                     if (v == 1) {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ProfilePage()),
+                        MaterialPageRoute(builder: (_) => const MyAdsPage()),
                       );
                     } else if (v == 2) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ProfilePage()),
+                      );
+                    } else if (v == 3) {
                       app.logout();
                     }
                   },
                   itemBuilder: (_) => [
                     PopupMenuItem(value: 0, child: Text(user.email)),
-                    const PopupMenuItem(value: 1, child: Text('Profile')),
-                    const PopupMenuItem(value: 2, child: Text('Logout')),
+                    const PopupMenuItem(value: 1, child: Text('My Ads')),
+                    const PopupMenuItem(value: 2, child: Text('Profile')),
+                    const PopupMenuItem(value: 3, child: Text('Logout')),
                   ],
                   icon: const Icon(Icons.account_circle),
                 );
