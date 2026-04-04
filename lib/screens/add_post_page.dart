@@ -537,11 +537,15 @@ class _AddPostPageState extends State<AddPostPage> {
     ],
   };
 
+  static const int _imageMaxWidth = 800;
+  static const int _imageMaxHeight = 800;
+  static const int _imageQuality = 70;
+
   Future<void> _pickImages() async {
     final picked = await _picker.pickMultiImage(
-      maxWidth: 1200,
-      maxHeight: 1200,
-      imageQuality: 85,
+      maxWidth: _imageMaxWidth,
+      maxHeight: _imageMaxHeight,
+      imageQuality: _imageQuality,
     );
     if (picked.isEmpty) return;
 
@@ -554,9 +558,9 @@ class _AddPostPageState extends State<AddPostPage> {
   Future<void> _captureImage() async {
     final picked = await _picker.pickImage(
       source: ImageSource.camera,
-      maxWidth: 1200,
-      maxHeight: 1200,
-      imageQuality: 85,
+      maxWidth: _imageMaxWidth,
+      maxHeight: _imageMaxHeight,
+      imageQuality: _imageQuality,
     );
     if (picked == null) return;
 
