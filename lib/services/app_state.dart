@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/room.dart';
 import '../models/user.dart';
@@ -15,6 +16,9 @@ class AppState {
   final ValueNotifier<User?> currentUser = ValueNotifier<User?>(null);
   final ValueNotifier<List<Room>> rooms = ValueNotifier<List<Room>>([]);
   final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
+  final ValueNotifier<bool> updateAvailable = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> forceUpdateRequired = ValueNotifier<bool>(false);
+  final ValueNotifier<String?> updateUrl = ValueNotifier<String?>(null);
 
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -22,6 +26,9 @@ class AppState {
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _roomsSub;
   StreamSubscription<fb_auth.User?>? _authSub;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _profileSub;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _updateConfigSub;
+  String? _packageName;
+  String? _currentVersion;
 
   Future<void> init() async {
     final appBox = Hive.box('app');
@@ -33,8 +40,10 @@ class AppState {
       themeMode.value = ThemeMode.light;
     }
 
+    await _initPackageInfo();
     _authSub = _auth.authStateChanges().listen(_handleAuthStateChanged);
     _listenRooms();
+    _listenUpdateConfig();
   }
 
   void _handleAuthStateChanged(fb_auth.User? authUser) {
@@ -81,6 +90,71 @@ class AppState {
           .map((doc) => Room.fromMap(doc.data(), id: doc.id))
           .toList();
     });
+  }
+
+  Future<void> _initPackageInfo() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _packageName = info.packageName;
+      _currentVersion = info.version;
+      updateUrl.value = 'https://play.google.com/store/apps/details?id=${info.packageName}';
+    } catch (_) {
+      _packageName = null;
+      _currentVersion = null;
+    }
+  }
+
+  void _listenUpdateConfig() {
+    _updateConfigSub?.cancel();
+    _updateConfigSub = _firestore
+        .collection('app_config')
+        .doc('updates')
+        .snapshots()
+        .listen((snapshot) {
+      final data = snapshot.data();
+      if (data == null) return;
+      final latest = data['latestVersion'] as String?;
+      final minSupported = data['minSupportedVersion'] as String?;
+      final url = data['updateUrl'] as String?;
+      if (url != null && url.isNotEmpty) {
+        updateUrl.value = url;
+      }
+      _evaluateVersionState(latest, minSupported);
+    }, onError: (_) {
+      // keep existing values if config cannot be loaded
+    });
+  }
+
+  void _evaluateVersionState(String? latestVersion, String? minSupportedVersion) {
+    final current = _currentVersion;
+    if (current == null || latestVersion == null) {
+      updateAvailable.value = false;
+      forceUpdateRequired.value = false;
+      return;
+    }
+
+    final currentCmp = _compareVersionStrings(current, latestVersion);
+    final minCmp = minSupportedVersion != null
+        ? _compareVersionStrings(current, minSupportedVersion)
+        : 1;
+
+    forceUpdateRequired.value = minSupportedVersion != null && minCmp < 0;
+    updateAvailable.value = currentCmp < 0;
+    if (forceUpdateRequired.value) {
+      updateAvailable.value = true;
+    }
+  }
+
+  int _compareVersionStrings(String a, String b) {
+    final aParts = a.split('.').map(int.tryParse).map((v) => v ?? 0).toList();
+    final bParts = b.split('.').map(int.tryParse).map((v) => v ?? 0).toList();
+    final maxLen = aParts.length > bParts.length ? aParts.length : bParts.length;
+    for (var i = 0; i < maxLen; i++) {
+      final aVal = i < aParts.length ? aParts[i] : 0;
+      final bVal = i < bParts.length ? bParts[i] : 0;
+      if (aVal != bVal) return aVal.compareTo(bVal);
+    }
+    return 0;
   }
 
   Future<bool> login(String email, String password) async {
@@ -216,5 +290,6 @@ class AppState {
     _roomsSub?.cancel();
     _authSub?.cancel();
     _profileSub?.cancel();
+    _updateConfigSub?.cancel();
   }
 }

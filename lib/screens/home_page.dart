@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/app_state.dart';
 import '../models/room.dart';
 import '../widgets/room_card.dart';
@@ -145,9 +146,11 @@ class _HomePageState extends State<HomePage> {
       ),
 
       // body: add location filter above the list
-      body: Container(
-        color: _isOffline ? Colors.red.shade50 : null,
-        child: ValueListenableBuilder<List>(
+      body: Stack(
+        children: [
+          Container(
+            color: _isOffline ? Colors.red.shade50 : null,
+            child: ValueListenableBuilder<List>(
           valueListenable: app.rooms,
           builder: (context, rooms, child) {
           final allRooms = List.of(rooms.cast<Room>());
@@ -231,6 +234,27 @@ class _HomePageState extends State<HomePage> {
 
           return Column(
             children: [
+              ValueListenableBuilder<bool>(
+                valueListenable: AppState.instance.updateAvailable,
+                builder: (context, available, _) {
+                  if (!available) return const SizedBox.shrink();
+                  return MaterialBanner(
+                    backgroundColor: Colors.orange.shade100,
+                    content: const Text('A new version is available.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () async {
+                          final url = AppState.instance.updateUrl.value;
+                          if (url != null) {
+                            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: const Text('Update'),
+                      ),
+                    ],
+                  );
+                },
+              ),
               if (_isOffline || _showBackOnline)
                 Container(
                   width: double.infinity,
@@ -401,6 +425,48 @@ class _HomePageState extends State<HomePage> {
       ),
     ),
 
+          ValueListenableBuilder<bool>(
+            valueListenable: AppState.instance.forceUpdateRequired,
+            builder: (context, forceUpdate, _) {
+              if (!forceUpdate) return const SizedBox.shrink();
+              return Positioned.fill(
+                child: AbsorbPointer(
+                  absorbing: true,
+                  child: Container(
+                    color: Colors.white.withOpacity(0.95),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Update required',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'A mandatory update is available. You must update the app before continuing.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: () async {
+                            final url = AppState.instance.updateUrl.value;
+                            if (url != null) {
+                              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          child: const Text('Update now'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       floatingActionButton: ValueListenableBuilder(
         valueListenable: app.currentUser,
         builder: (context, user, child) {
