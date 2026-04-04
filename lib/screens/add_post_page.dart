@@ -537,8 +537,8 @@ class _AddPostPageState extends State<AddPostPage> {
     ],
   };
 
-  static const int _imageMaxWidth = 800;
-  static const int _imageMaxHeight = 800;
+  static const double _imageMaxWidth = 800.0;
+  static const double _imageMaxHeight = 800.0;
   static const int _imageQuality = 70;
 
   Future<void> _pickImages() async {
@@ -711,13 +711,17 @@ class _AddPostPageState extends State<AddPostPage> {
             if (_localImagePaths.isNotEmpty)
               SizedBox(
                 height: 160,
-                child: GridView.builder(
+                child: ReorderableListView.builder(
                   scrollDirection: Axis.horizontal,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 1,
-                    mainAxisSpacing: 8,
-                  ),
+                  onReorder: (oldIndex, newIndex) {
+                    setState(() {
+                      if (newIndex > oldIndex) newIndex -= 1;
+                      final item = _localImagePaths.removeAt(oldIndex);
+                      _localImagePaths.insert(newIndex, item);
+                    });
+                  },
                   itemCount: _localImagePaths.length,
+                  buildDefaultDragHandles: false,
                   itemBuilder: (context, i) {
                     final p = _localImagePaths[i];
                     final imageWidget = p.startsWith('http')
@@ -736,29 +740,49 @@ class _AddPostPageState extends State<AddPostPage> {
                             },
                           )
                         : Image.file(File(p), fit: BoxFit.cover);
-
-                    return Stack(
-                      children: [
-                        Positioned.fill(child: imageWidget),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: CircleAvatar(
-                            radius: 14,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.45),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              iconSize: 16,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              icon: const Icon(Icons.close),
-                              onPressed: () =>
-                                  setState(() => _localImagePaths.removeAt(i)),
+                    return Container(
+                      key: ValueKey(p),
+                      margin: const EdgeInsets.only(right: 8),
+                      width: 140,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(child: imageWidget),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.45),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 16,
+                                color: Theme.of(context).colorScheme.onSurface,
+                                icon: const Icon(Icons.close),
+                                onPressed: () =>
+                                    setState(() => _localImagePaths.removeAt(i)),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            bottom: 4,
+                            left: 4,
+                            child: ReorderableDragStartListener(
+                              index: i,
+                              child: CircleAvatar(
+                                radius: 14,
+                                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+                                child: Icon(
+                                  Icons.drag_handle,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
