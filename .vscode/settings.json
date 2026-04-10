@@ -1,0 +1,8 @@
+{
+  "dart.flutterSdkPath": "C:\\Users\\DELL\\flutter_sdk\\flutter",
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.env.windows": {
+    "JAVA_HOME": "C:\\Program Files\\Android Studio\\jbr",
+    "PATH": "${env:PATH};C:\\Program Files\\Android Studio\\jbr\\bin"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter Launch",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "env": {
+        "JAVA_HOME": "C:\\Program Files\\Android Studio\\jbr"
+      }
+    }
+  ]
+}
