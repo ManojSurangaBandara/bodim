@@ -67,49 +67,96 @@ class _RejectReasonsPageState extends State<RejectReasonsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reject Reasons')),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('reject_reasons')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(
+              Icons.rule,
+              color: Theme.of(context).colorScheme.primary,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Reject Reasons',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.white.withOpacity(0.9),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('reject_reasons')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          final docs = snapshot.data?.docs ?? [];
-          if (docs.isEmpty) {
-            return const Center(child: Text('No reject reasons yet.'));
-          }
+            final docs = snapshot.data?.docs ?? [];
+            if (docs.isEmpty) {
+              return const Center(
+                child: Card(
+                  margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('No reject reasons yet.'),
+                  ),
+                ),
+              );
+            }
 
-          return ListView.separated(
-            itemCount: docs.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              itemCount: docs.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
               final doc = docs[index];
               final text = doc.data()['text'] as String? ?? '';
-              return ListTile(
-                title: Text(text),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _showReasonEditor(docId: doc.id, initialText: text),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _deleteReason(doc.id),
-                    ),
-                  ],
+              return Card(
+                color: Theme.of(context).colorScheme.surface,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: ListTile(
+                  title: Text(text),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => _showReasonEditor(docId: doc.id, initialText: text),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _deleteReason(doc.id),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
           );
         },
       ),
+    ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Theme.of(context).colorScheme.primary,
         onPressed: () => _showReasonEditor(),
         child: const Icon(Icons.add),
       ),

@@ -144,18 +144,66 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
   Widget build(BuildContext context) {
     final currentUser = AppState.instance.currentUser.value;
     return Scaffold(
-      appBar: AppBar(title: const Text('Pending Ads')),
-      body: ValueListenableBuilder<List>(
-        valueListenable: AppState.instance.rooms,
-        builder: (context, rooms, child) {
-          if (currentUser == null || !currentUser.isAdmin) {
-            return const Center(child: Text('You are not authorized to view this page.'));
-          }
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(
+              Icons.admin_panel_settings,
+              color: Theme.of(context).colorScheme.primary,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Pending Ads',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.white.withOpacity(0.9),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: ValueListenableBuilder<List>(
+          valueListenable: AppState.instance.rooms,
+          builder: (context, rooms, child) {
+            if (currentUser == null || !currentUser.isAdmin) {
+              return const Center(
+                child: Card(
+                  margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('You are not authorized to view this page.'),
+                  ),
+                ),
+              );
+            }
 
-          final pendingRooms = rooms.cast<Room>().where((room) => room.status == 'pending').toList();
+            final pendingRooms = rooms.cast<Room>().where((room) => room.status == 'pending').toList();
 
           if (pendingRooms.isEmpty) {
-            return const Center(child: Text('There are no pending ads at the moment.'));
+            return const Center(
+              child: Card(
+                margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('There are no pending ads at the moment.'),
+                ),
+              ),
+            );
           }
 
           return ListView.builder(
@@ -165,7 +213,10 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
               final room = pendingRooms[index];
               final isProcessing = room.id != null && _processing.contains(room.id);
               return Card(
+                color: Theme.of(context).colorScheme.surface,
                 margin: const EdgeInsets.only(bottom: 12),
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 clipBehavior: Clip.hardEdge,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -248,6 +299,11 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
                             children: [
                               Expanded(
                                 child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.redAccent,
+                                    side: const BorderSide(color: Colors.redAccent),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
                                   onPressed: isProcessing ? null : () => _showRejectReasonDialog(room),
                                   child: isProcessing
                                       ? const SizedBox(
@@ -261,6 +317,11 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green.shade600,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
                                   onPressed: isProcessing ? null : () => _updateRoomStatus(context, room, 'approved'),
                                   child: isProcessing
                                       ? const SizedBox(
@@ -283,6 +344,7 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 }
