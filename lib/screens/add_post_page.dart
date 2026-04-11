@@ -729,206 +729,257 @@ class _AddPostPageState extends State<AddPostPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.roomToEdit == null ? 'Add Room' : 'Edit Room'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (widget.roomToEdit?.status == 'rejected' && widget.roomToEdit?.rejectionReason != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14.0),
-                margin: const EdgeInsets.only(bottom: 14.0),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Rejected reason',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.shade900,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.blueAccent, Colors.lightBlueAccent],
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (widget.roomToEdit?.status == 'rejected' && widget.roomToEdit?.rejectionReason != null)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14.0),
+                          margin: const EdgeInsets.only(bottom: 14.0),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.red.shade200),
                           ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.roomToEdit!.rejectionReason!,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Please update the ad and submit again.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
-                    ),
-                  ],
-                ),
-              ),
-            TextField(
-              controller: _titleCtl,
-              decoration: const InputDecoration(labelText: 'Title'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descCtl,
-              decoration: const InputDecoration(labelText: 'Description'),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _priceCtl,
-              decoration: const InputDecoration(labelText: 'Price (LKR)'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _contactCtl,
-              decoration: const InputDecoration(labelText: 'Contact number'),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _selectedDistrict,
-              decoration: const InputDecoration(labelText: 'District'),
-              items: _districtTowns.keys
-                  .map((d) => DropdownMenuItem(value: d, child: Text(d)))
-                  .toList(),
-              onChanged: (v) {
-                setState(() {
-                  _selectedDistrict = v;
-                  _selectedTown = null; // reset town when district changes
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _selectedTown,
-              decoration: const InputDecoration(labelText: 'Town'),
-              items: _selectedDistrict != null
-                  ? _districtTowns[_selectedDistrict]!
-                        .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                        .toList()
-                  : [],
-              onChanged: _selectedDistrict == null
-                  ? null
-                  : (v) => setState(() => _selectedTown = v),
-            ),
-            const SizedBox(height: 12),
-            if (_localImagePaths.isNotEmpty)
-              SizedBox(
-                height: 160,
-                child: ReorderableListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  onReorder: (oldIndex, newIndex) {
-                    setState(() {
-                      if (newIndex > oldIndex) newIndex -= 1;
-                      final item = _localImagePaths.removeAt(oldIndex);
-                      _localImagePaths.insert(newIndex, item);
-                    });
-                  },
-                  itemCount: _localImagePaths.length,
-                  buildDefaultDragHandles: false,
-                  itemBuilder: (context, i) {
-                    final p = _localImagePaths[i];
-                    final imageWidget = p.startsWith('http')
-                        ? Image.network(
-                            p,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const Center(child: CircularProgressIndicator());
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Theme.of(context).colorScheme.surfaceVariant,
-                                child: const Center(child: Icon(Icons.broken_image)),
-                              );
-                            },
-                          )
-                        : Image.file(
-                            File(p),
-                            fit: BoxFit.cover,
-                            cacheWidth: 400,
-                            cacheHeight: 400,
-                          );
-                    return ReorderableDelayedDragStartListener(
-                      key: ValueKey('$p-$i'),
-                      index: i,
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        width: 140,
-                        child: Stack(
-                          children: [
-                            Positioned.fill(child: imageWidget),
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: CircleAvatar(
-                                radius: 14,
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.45),
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  iconSize: 16,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () =>
-                                      setState(() => _localImagePaths.removeAt(i)),
-                                ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Rejected reason',
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red.shade900,
+                                    ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 6),
+                              Text(
+                                widget.roomToEdit!.rejectionReason!,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Please update the ad and submit again.',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
+                              ),
+                            ],
+                          ),
+                        ),
+                      TextField(
+                        controller: _titleCtl,
+                        decoration: const InputDecoration(
+                          labelText: 'Title',
+                          border: OutlineInputBorder(),
                         ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _descCtl,
+                        decoration: const InputDecoration(
+                          labelText: 'Description',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _priceCtl,
+                        decoration: const InputDecoration(
+                          labelText: 'Price (LKR)',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _contactCtl,
+                        decoration: const InputDecoration(
+                          labelText: 'Contact number',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _selectedDistrict,
+                        decoration: const InputDecoration(
+                          labelText: 'District',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _districtTowns.keys
+                            .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                            .toList(),
+                        onChanged: (v) {
+                          setState(() {
+                            _selectedDistrict = v;
+                            _selectedTown = null; // reset town when district changes
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _selectedTown,
+                        decoration: const InputDecoration(
+                          labelText: 'Town',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _selectedDistrict != null
+                            ? _districtTowns[_selectedDistrict]!
+                                  .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                                  .toList()
+                            : [],
+                        onChanged: _selectedDistrict == null
+                            ? null
+                            : (v) => setState(() => _selectedTown = v),
+                      ),
+                      const SizedBox(height: 12),
+                      if (_localImagePaths.isNotEmpty)
+                        SizedBox(
+                          height: 160,
+                          child: ReorderableListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            onReorder: (oldIndex, newIndex) {
+                              setState(() {
+                                if (newIndex > oldIndex) newIndex -= 1;
+                                final item = _localImagePaths.removeAt(oldIndex);
+                                _localImagePaths.insert(newIndex, item);
+                              });
+                            },
+                            itemCount: _localImagePaths.length,
+                            buildDefaultDragHandles: false,
+                            itemBuilder: (context, i) {
+                              final p = _localImagePaths[i];
+                              final imageWidget = p.startsWith('http')
+                                  ? Image.network(
+                                      p,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return const Center(child: CircularProgressIndicator());
+                                      },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          color: Theme.of(context).colorScheme.surfaceVariant,
+                                          child: const Center(child: Icon(Icons.broken_image)),
+                                        );
+                                      },
+                                    )
+                                  : Image.file(
+                                      File(p),
+                                      fit: BoxFit.cover,
+                                      cacheWidth: 400,
+                                      cacheHeight: 400,
+                                    );
+                              return ReorderableDelayedDragStartListener(
+                                key: ValueKey('$p-$i'),
+                                index: i,
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  width: 140,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Stack(
+                                      children: [
+                                        Positioned.fill(child: imageWidget),
+                                        Positioned(
+                                          top: 4,
+                                          right: 4,
+                                          child: CircleAvatar(
+                                            radius: 14,
+                                            backgroundColor:
+                                                Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+                                            child: IconButton(
+                                              padding: EdgeInsets.zero,
+                                              iconSize: 16,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                              icon: const Icon(Icons.close),
+                                              onPressed: () => setState(() => _localImagePaths.removeAt(i)),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 8,
+                        children: [
+                          PressableScale(
+                            child: ElevatedButton.icon(
+                              onPressed: _pickImages,
+                              icon: const Icon(Icons.photo_library),
+                              label: const Text('Gallery'),
+                            ),
+                          ),
+                          PressableScale(
+                            child: ElevatedButton.icon(
+                              onPressed: _captureImage,
+                              icon: const Icon(Icons.camera_alt),
+                              label: const Text('Camera'),
+                            ),
+                          ),
+                          if (_localImagePaths.isNotEmpty)
+                            TextButton(
+                              onPressed: () => setState(() => _localImagePaths.clear()),
+                              child: const Text('Remove all'),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: PressableScale(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            onPressed: _isSubmitting ? null : _submit,
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Text(widget.roomToEdit == null ? 'Post' : 'Update'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                PressableScale(
-                  child: ElevatedButton.icon(
-                    onPressed: _pickImages,
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Gallery'),
-                  ),
-                ),
-                PressableScale(
-                  child: ElevatedButton.icon(
-                    onPressed: _captureImage,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Camera'),
-                  ),
-                ),
-                if (_localImagePaths.isNotEmpty)
-                  TextButton(
-                    onPressed: () => setState(() => _localImagePaths.clear()),
-                    child: const Text('Remove all'),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: PressableScale(
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Post'),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
