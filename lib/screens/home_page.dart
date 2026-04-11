@@ -11,6 +11,7 @@ import 'login_page.dart';
 import 'add_post_page.dart';
 import 'my_ads_page.dart';
 import 'pending_ads_page.dart';
+import 'reject_reasons_page.dart';
 import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -134,14 +135,20 @@ class _HomePageState extends State<HomePage> {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const PendingAdsPage()),
                       );
+                    } else if (v == 5) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const RejectReasonsPage()),
+                      );
                     }
                   },
                   itemBuilder: (_) => [
                     PopupMenuItem(value: 0, child: Text(user.email)),
                     const PopupMenuItem(value: 1, child: Text('My Ads')),
                     const PopupMenuItem(value: 2, child: Text('Profile')),
-                    if (user.isAdmin)
+                    if (user.isAdmin) ...[
                       const PopupMenuItem(value: 4, child: Text('Pending Ads')),
+                      const PopupMenuItem(value: 5, child: Text('Reject Reasons')),
+                    ],
                     const PopupMenuItem(value: 3, child: Text('Logout')),
                   ],
                   icon: const Icon(Icons.account_circle),

@@ -735,6 +735,39 @@ class _AddPostPageState extends State<AddPostPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.roomToEdit?.status == 'rejected' && widget.roomToEdit?.rejectionReason != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14.0),
+                margin: const EdgeInsets.only(bottom: 14.0),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rejected reason',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red.shade900,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.roomToEdit!.rejectionReason!,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Please update the ad and submit again.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
+                    ),
+                  ],
+                ),
+              ),
             TextField(
               controller: _titleCtl,
               decoration: const InputDecoration(labelText: 'Title'),

@@ -28,7 +28,13 @@ class MyAdsPage extends StatelessWidget {
           return ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 12),
             itemCount: myRooms.length,
-            itemBuilder: (context, index) => RoomCard(room: myRooms[index]),
+            itemBuilder: (context, index) {
+              final room = myRooms[index];
+              return RoomCard(
+                room: room,
+                hideDetailsOnPendingRejected: room.status != 'approved',
+              );
+            },
           );
         },
       ),

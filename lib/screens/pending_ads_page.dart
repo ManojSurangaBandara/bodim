@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/room.dart';
 import '../services/app_state.dart';
+import 'reject_reasons_page.dart';
 
 class PendingAdsPage extends StatefulWidget {
   const PendingAdsPage({super.key});
@@ -16,7 +17,12 @@ class PendingAdsPage extends StatefulWidget {
 class _PendingAdsPageState extends State<PendingAdsPage> {
   final Set<String> _processing = {};
 
-  Future<void> _updateRoomStatus(BuildContext context, Room room, String status) async {
+  Future<void> _updateRoomStatus(
+    BuildContext context,
+    Room room,
+    String status, {
+    String? rejectionReason,
+  }) async {
     if (room.id == null || _processing.contains(room.id)) return;
 
     setState(() {
@@ -24,11 +30,16 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
     });
 
     try {
-      await FirebaseFirestore.instance.collection('rooms').doc(room.id).update(
-            {
-              'status': status,
-            },
-          );
+      final data = <String, dynamic>{'status': status};
+      if (status == 'approved') {
+        data['rejectionReason'] = FieldValue.delete();
+      } else if (rejectionReason != null) {
+        data['rejectionReason'] = rejectionReason;
+      } else {
+        data['rejectionReason'] = null;
+      }
+
+      await FirebaseFirestore.instance.collection('rooms').doc(room.id).update(data);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -50,6 +61,68 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
         });
       }
     }
+  }
+
+  Future<void> _showRejectReasonDialog(Room room) async {
+    if (room.id == null || _processing.contains(room.id)) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select reject reason'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('reject_reasons')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 120,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Text('No reject reasons available. Add them in Reject Reasons.');
+                }
+
+                return ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: snapshot.data!.docs.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final doc = snapshot.data!.docs[index];
+                    final text = doc.data()['text'] as String? ?? '';
+                    return ListTile(
+                      title: Text(text),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _updateRoomStatus(
+                          context,
+                          room,
+                          'rejected',
+                          rejectionReason: text,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String _timeAgo(DateTime dateTime) {
@@ -175,7 +248,7 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
                             children: [
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: isProcessing ? null : () => _updateRoomStatus(context, room, 'rejected'),
+                                  onPressed: isProcessing ? null : () => _showRejectReasonDialog(room),
                                   child: isProcessing
                                       ? const SizedBox(
                                           height: 18,

@@ -6,7 +6,13 @@ import '../screens/room_detail_page.dart';
 
 class RoomCard extends StatelessWidget {
   final Room room;
-  const RoomCard({super.key, required this.room});
+  final bool hideDetailsOnPendingRejected;
+
+  const RoomCard({
+    super.key,
+    required this.room,
+    this.hideDetailsOnPendingRejected = false,
+  });
 
   String _timeAgo(DateTime dateTime) {
     final now = DateTime.now();
@@ -104,21 +110,33 @@ class RoomCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                      const SizedBox(height: 6),
-                      if ((room.town != null && room.town!.isNotEmpty) || (room.district != null && room.district!.isNotEmpty))
-                        Text(
-                          '${room.town ?? ''}${(room.town != null && room.district != null) ? ', ' : ''}${room.district ?? ''}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      if (room.status == 'rejected' && room.rejectionReason != null && room.rejectionReason!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6.0),
+                          child: Text(
+                            room.rejectionReason!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
+                          ),
                         ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          Text('රු. ${room.price}', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
-                          const SizedBox(width: 8),
-                          if (room.createdAt != null)
-                            Text(_timeAgo(room.createdAt!), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                        ],
-                      ),
+                      if (!hideDetailsOnPendingRejected && room.status != 'rejected') ...[
+                        const SizedBox(height: 6),
+                        if ((room.town != null && room.town!.isNotEmpty) || (room.district != null && room.district!.isNotEmpty))
+                          Text(
+                            '${room.town ?? ''}${(room.town != null && room.district != null) ? ', ' : ''}${room.district ?? ''}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Text('රු. ${room.price}', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
+                            const SizedBox(width: 8),
+                            if (room.createdAt != null)
+                              Text(_timeAgo(room.createdAt!), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -36,6 +36,9 @@ class Room extends HiveObject {
   @HiveField(9)
   final String status;
 
+  @HiveField(10)
+  final String? rejectionReason;
+
   final String? id;
 
   Room({
@@ -49,6 +52,7 @@ class Room extends HiveObject {
     this.district,
     this.town,
     this.status = 'approved',
+    this.rejectionReason,
     this.id,
   });
 
@@ -73,6 +77,7 @@ class Room extends HiveObject {
       district: map['district'] as String?,
       town: map['town'] as String?,
       status: map['status'] as String? ?? 'approved',
+      rejectionReason: map['rejectionReason'] as String?,
     );
   }
 
@@ -88,6 +93,7 @@ class Room extends HiveObject {
       'district': district,
       'town': town,
       'status': status,
+      'rejectionReason': rejectionReason,
     };
   }
 }
