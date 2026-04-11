@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -28,6 +29,8 @@ class _HomePageState extends State<HomePage> {
   bool _isOffline = false;
   bool _showBackOnline = false;
   bool _filtersExpanded = true;
+  final int _pageSize = 10;
+  int _loadedRoomsCount = 10;
   Timer? _connectivityTimer;
 
   @override
@@ -84,6 +87,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _retryConnectivity() async {
     await _checkConnectivity();
+  }
+
+  void _resetLoadedRooms() {
+    setState(() {
+      _loadedRoomsCount = _pageSize;
+    });
   }
 
   @override
@@ -484,6 +493,7 @@ class _HomePageState extends State<HomePage> {
                                                     setState(() {
                                                       _selectedDistrict = v;
                                                       _selectedTown = null;
+                                                      _resetLoadedRooms();
                                                     });
                                                   },
                                                 ),
@@ -519,6 +529,7 @@ class _HomePageState extends State<HomePage> {
                                                   onChanged: (v) {
                                                     setState(() {
                                                       _selectedTown = v;
+                                                      _resetLoadedRooms();
                                                     });
                                                   },
                                                 ),
@@ -546,6 +557,7 @@ class _HomePageState extends State<HomePage> {
                                               onChanged: (v) {
                                                 setState(() {
                                                   _priceRange = v;
+                                                  _resetLoadedRooms();
                                                 });
                                               },
                                             ),
@@ -615,6 +627,7 @@ class _HomePageState extends State<HomePage> {
                                             _selectedDistrict = null;
                                             _selectedTown = null;
                                             _priceRange = null;
+                                            _resetLoadedRooms();
                                           });
                                         },
                                         icon: const Icon(Icons.refresh),
@@ -631,15 +644,42 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                              itemCount: filtered.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 2),
-                                  child: RoomCard(room: filtered[index]),
-                                );
+                          : NotificationListener<ScrollNotification>(
+                              onNotification: (notification) {
+                                if (notification.metrics.pixels >=
+                                        notification.metrics.maxScrollExtent -
+                                            200 &&
+                                    _loadedRoomsCount < filtered.length) {
+                                  setState(() {
+                                    _loadedRoomsCount = min(
+                                      filtered.length,
+                                      _loadedRoomsCount + _pageSize,
+                                    );
+                                  });
+                                }
+                                return false;
                               },
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                                itemCount: min(filtered.length, _loadedRoomsCount) +
+                                    (filtered.length > _loadedRoomsCount ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index >= min(filtered.length, _loadedRoomsCount)) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 2),
+                                    child: RoomCard(room: filtered[index]),
+                                  );
+                                },
+                              ),
                             ),
                     ),
                   ],
