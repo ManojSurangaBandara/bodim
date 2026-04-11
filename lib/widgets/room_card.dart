@@ -63,7 +63,7 @@ class RoomCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => RoomDetailPage(room: room))),
         child: SizedBox(
-          height: 110,
+          height: 100,
           child: Row(
             children: [
               AspectRatio(
@@ -78,7 +78,7 @@ class RoomCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
