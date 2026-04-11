@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -217,6 +218,21 @@ class AppState {
       return false;
     }
     try {
+      if (room.images != null) {
+        for (final imageUrl in room.images!) {
+          if (!imageUrl.startsWith('http')) continue;
+          try {
+            final ref = FirebaseStorage.instance.refFromURL(imageUrl);
+            await ref.delete().timeout(
+              const Duration(seconds: 45),
+              onTimeout: () => throw TimeoutException('Image delete timed out'),
+            );
+          } catch (e, st) {
+            debugPrint('Failed to delete image $imageUrl: $e\n$st');
+          }
+        }
+      }
+
       await _firestore.collection('rooms').doc(room.id).delete().timeout(
         const Duration(seconds: 30),
         onTimeout: () => throw TimeoutException('Delete room timed out'),
