@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -157,6 +158,78 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     );
   }
 
+  Future<void> _rejectRoom(Room room) async {
+    if (room.id == null) return;
+    final parentContext = context;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Reject Ad'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('reject_reasons')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 120,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+                if (docs.isEmpty) {
+                  return const Text('No reject reasons available. Add them in Reject Reasons.');
+                }
+
+                return ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: docs.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final text = docs[index].data()['text'] as String? ?? '';
+                    return ListTile(
+                      title: Text(text),
+                      onTap: () async {
+                        Navigator.of(ctx).pop();
+                        try {
+                          await FirebaseFirestore.instance.collection('rooms').doc(room.id).update({
+                            'status': 'rejected',
+                            'rejectionReason': text,
+                          });
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(parentContext).showSnackBar(
+                            const SnackBar(content: Text('Ad rejected successfully.')),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(parentContext).showSnackBar(
+                            SnackBar(content: Text('Failed to reject ad: $e')),
+                          );
+                        }
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   String _formatDateTime(DateTime dt) {
     final local = dt.toLocal();
     final now = DateTime.now();
@@ -195,6 +268,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         final currentUser = AppState.instance.currentUser.value;
         final canDelete =
             currentUser != null && room.creatorEmail == currentUser.email;
+        final canAdminReject = currentUser != null && currentUser.isAdmin;
 
         return Scaffold(
           appBar: AppBar(
@@ -217,22 +291,28 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             ),
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            actions: canDelete
-                ? [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => AddPostPage(roomToEdit: room),
-                        ),
-                      ),
+            actions: [
+              if (canAdminReject)
+                IconButton(
+                  icon: const Icon(Icons.block),
+                  tooltip: 'Reject Ad',
+                  onPressed: room.status == 'rejected' ? null : () => _rejectRoom(room),
+                ),
+              if (canDelete) ...[
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AddPostPage(roomToEdit: room),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: _deleteRoom,
-                    ),
-                  ]
-                : null,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: _deleteRoom,
+                ),
+              ],
+            ],
           ),
           body: Container(
             decoration: const BoxDecoration(
