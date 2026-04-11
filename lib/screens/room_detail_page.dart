@@ -188,7 +188,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       valueListenable: AppState.instance.rooms,
       builder: (context, rooms, _) {
         final room = rooms.firstWhere(
-          (r) => r.id != null && r.id == widget.room.id,
+          (r) => r.id == widget.room.id,
           orElse: () => widget.room,
         );
         final images = room.images ?? [];
@@ -198,7 +198,25 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(room.title),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.home_work,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'බෝඩිම්.lk',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             actions: canDelete
                 ? [
                     IconButton(
@@ -216,109 +234,92 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                   ]
                 : null,
           ),
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Image carousel / placeholder
-                SizedBox(
-                  height: 300,
-                  child: images.isEmpty
-                      ? Container(
-                          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.06),
-                          child: Center(
-                            child: Icon(Icons.home, size: 96, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.blueAccent, Colors.lightBlueAccent],
+                stops: [0.0, 1.0],
+              ),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Image carousel
+                  if (images.isNotEmpty)
+                    Container(
+                      height: 250,
+                      margin: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
                           ),
-                        )
-                      : Stack(
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
+                          fit: StackFit.expand,
                           children: [
                             PageView.builder(
                               itemCount: images.length,
-                              onPageChanged: (i) => setState(() => _page = i),
-                              itemBuilder: (context, i) {
-                                final src = images[i];
-                                final heroTag = '${room.title}-${room.createdAt?.millisecondsSinceEpoch ?? room.price}-$i';
-
-                                Widget img;
-                                if (src.startsWith('http')) {
-                                  img = Image.network(
-                                    src,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return const Center(child: CircularProgressIndicator());
-                                    },
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey.shade200,
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.broken_image,
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
+                              onPageChanged: (index) => setState(() => _page = index),
+                              itemBuilder: (context, index) {
+                                final image = images[index];
+                                Widget content = image.startsWith('http')
+                                    ? Image.network(
+                                        image,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Container(
+                                            color: Theme.of(context).colorScheme.surfaceVariant,
+                                            child: const Center(
+                                              child: Icon(Icons.broken_image, size: 48),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : Image.file(
+                                        File(image),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Container(
+                                            color: Theme.of(context).colorScheme.surfaceVariant,
+                                            child: const Center(
+                                              child: Icon(Icons.broken_image, size: 48),
+                                            ),
+                                          );
+                                        },
                                       );
-                                    },
-                                  );
-                                } else {
-                                  final f = File(src);
-                                  img = f.existsSync()
-                                      ? Image.file(f, fit: BoxFit.cover, width: double.infinity, height: double.infinity)
-                                      : Container(color: Colors.grey.shade200);
-                                }
 
                                 return GestureDetector(
-                                  onTap: () => _openFullScreen(i),
-                                  child: Hero(
-                                    tag: heroTag,
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        img,
-                                        Positioned.fill(
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                                colors: [Colors.transparent, Theme.of(context).colorScheme.onSurface.withOpacity(0.12)],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                  onTap: () => _openFullScreen(index),
+                                  child: content,
                                 );
                               },
                             ),
                             Positioned(
-                              bottom: 8,
+                              bottom: 12,
                               left: 0,
                               right: 0,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(images.length, (i) {
+                                children: List.generate(images.length, (index) {
                                   return Container(
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                    ),
-                                    width: _page == i ? 10 : 8,
-                                    height: _page == i ? 10 : 8,
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    width: _page == index ? 12 : 8,
+                                    height: _page == index ? 12 : 8,
                                     decoration: BoxDecoration(
-                                      color: _page == i
-                                          ? Theme.of(context).colorScheme.primary
-                                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                      color: _page == index
+                                          ? Theme.of(context).colorScheme.onPrimary
+                                          : Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
                                       shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black12,
-                                          blurRadius: 2,
-                                          offset: Offset(0, 1),
-                                        ),
-                                      ],
                                     ),
                                   );
                                 }),
@@ -326,154 +327,178 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                             ),
                           ],
                         ),
-                ),
+                      ),
+                    ),
 
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Room details card
+                  Card(
+                    margin: const EdgeInsets.all(16),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              room.title,
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
+                          // Title
+                          Text(
+                            room.title,
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
+                          const SizedBox(height: 8),
+
+                          // Price
                           Text(
                             'රු. ${room.price}',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(color: Theme.of(context).colorScheme.primary),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Description
+                          if (room.description != null && room.description!.isNotEmpty)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Description',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  room.description!,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            ),
+
+                          // Location
+                          if (room.district != null && room.town != null)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Location',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${room.town}, ${room.district}',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            ),
+
+                          // Posted time
+                          if (room.createdAt != null)
+                            Text(
+                              'Posted: ${_formatDateTime(room.createdAt!)}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
                         ],
                       ),
-                      if (room.status != 'approved')
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Chip(
-                            backgroundColor: room.status == 'pending'
-                                ? Colors.orange.shade100
-                                : Colors.red.shade100,
-                            label: Text(
-                              room.status!.toUpperCase(),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: room.status == 'pending'
-                                        ? Colors.orange.shade900
-                                        : Colors.red.shade900,
+                    ),
+                  ),
+
+                  // Contact buttons
+                  if (room.contact != null && room.contact!.isNotEmpty)
+                    Card(
+                      margin: const EdgeInsets.all(16),
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Contact',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
-                          ),
-                        ),
-                      const SizedBox(height: 8),
-                      if (room.description != null && room.description!.isNotEmpty)
-                        Text(
-                          room.description!,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-
-                      if (room.createdAt != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            'Posted on: ${_formatDateTime(room.createdAt!)}',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          ),
-                        ),
-
-                      const SizedBox(height: 12),
-                      if (room.contact != null && room.contact!.isNotEmpty)
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.phone,
-                              size: 18,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 8),
-                            SelectableText(
-                              room.contact!,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-
-                      if (room.district != null && room.town != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${room.town}, ${room.district}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: PressableScale(
-                              child: ElevatedButton.icon(
-                                onPressed: room.contact == null || room.contact!.isEmpty
-                                    ? null
-                                    : () => _call(room.contact!),
-                                icon: const Icon(Icons.phone),
-                                label: const Text('Call'),
-                                style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(48),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: PressableScale(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _call(room.contact!),
+                                      icon: const Icon(Icons.call),
+                                      label: const Text('Call'),
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size.fromHeight(50),
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: PressableScale(
-                              child: OutlinedButton.icon(
-                                onPressed: room.contact == null || room.contact!.isEmpty
-                                    ? null
-                                    : () => _sms(room.contact!),
-                                icon: const Icon(Icons.message),
-                                label: const Text('SMS'),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(48),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: PressableScale(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => _sms(room.contact!),
+                                      icon: const Icon(Icons.message),
+                                      label: const Text('SMS'),
+                                      style: OutlinedButton.styleFrom(
+                                        minimumSize: const Size.fromHeight(50),
+                                        side: BorderSide(color: Colors.blue.shade600),
+                                        foregroundColor: Colors.blue.shade700,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: PressableScale(
+                            const SizedBox(height: 12),
+                            PressableScale(
                               child: OutlinedButton.icon(
-                                onPressed: room.contact == null || room.contact!.isEmpty
-                                    ? null
-                                    : () => _whatsapp(room.contact!),
+                                onPressed: room.contact == null || room.contact!.isNotEmpty
+                                    ? () => _whatsapp(room.contact!)
+                                    : null,
                                 icon: const Icon(Icons.chat),
                                 label: const Text('WhatsApp'),
                                 style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(48),
+                                  minimumSize: const Size.fromHeight(50),
+                                  side: BorderSide(color: Colors.green.shade600),
+                                  foregroundColor: Colors.green.shade700,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         );
