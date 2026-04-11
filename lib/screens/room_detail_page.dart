@@ -158,6 +158,45 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     );
   }
 
+  Future<void> _confirmReject(Room room, String reason, BuildContext parentContext) async {
+    if (room.id == null) return;
+    final confirmed = await showDialog<bool>(
+      context: parentContext,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm Reject'),
+        content: Text('Do you want to reject this ad for "$reason"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await FirebaseFirestore.instance.collection('rooms').doc(room.id).update({
+        'status': 'rejected',
+        'rejectionReason': reason,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(parentContext).showSnackBar(
+        const SnackBar(content: Text('Ad rejected successfully.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(parentContext).showSnackBar(
+        SnackBar(content: Text('Failed to reject ad: $e')),
+      );
+    }
+  }
+
   Future<void> _rejectRoom(Room room) async {
     if (room.id == null) return;
     final parentContext = context;
@@ -197,21 +236,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                       title: Text(text),
                       onTap: () async {
                         Navigator.of(ctx).pop();
-                        try {
-                          await FirebaseFirestore.instance.collection('rooms').doc(room.id).update({
-                            'status': 'rejected',
-                            'rejectionReason': text,
-                          });
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(parentContext).showSnackBar(
-                            const SnackBar(content: Text('Ad rejected successfully.')),
-                          );
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(parentContext).showSnackBar(
-                            SnackBar(content: Text('Failed to reject ad: $e')),
-                          );
-                        }
+                        await _confirmReject(room, text, parentContext);
                       },
                     );
                   },
