@@ -61,6 +61,7 @@ class AppState {
           authUser.email ?? '',
           name: data['name'] as String?,
           phone: data['phone'] as String?,
+          isAdmin: data['isAdmin'] as bool? ?? false,
         );
       } else {
         final user = User(authUser.email ?? '');
@@ -70,6 +71,7 @@ class AppState {
             'email': authUser.email,
             'name': null,
             'phone': null,
+            'isAdmin': false,
           },
           SetOptions(merge: true),
         );

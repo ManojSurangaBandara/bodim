@@ -16,5 +16,8 @@ class User extends HiveObject {
   @HiveField(3)
   String? password; // hashed or plain? for simplicity, plain, but in real app hash
 
-  User(this.email, {this.name, this.phone, this.password});
+  @HiveField(4)
+  bool isAdmin;
+
+  User(this.email, {this.name, this.phone, this.password, this.isAdmin = false});
 }

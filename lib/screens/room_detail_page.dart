@@ -349,6 +349,24 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                           ),
                         ],
                       ),
+                      if (room.status != 'approved')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Chip(
+                            backgroundColor: room.status == 'pending'
+                                ? Colors.orange.shade100
+                                : Colors.red.shade100,
+                            label: Text(
+                              room.status!.toUpperCase(),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: room.status == 'pending'
+                                        ? Colors.orange.shade900
+                                        : Colors.red.shade900,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 8),
                       if (room.description != null && room.description!.isNotEmpty)
                         Text(

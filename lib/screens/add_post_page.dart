@@ -693,6 +693,7 @@ class _AddPostPageState extends State<AddPostPage> {
       description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
       district: _selectedDistrict,
       town: _selectedTown,
+      status: 'pending',
       id: widget.roomToEdit?.id,
     );
 

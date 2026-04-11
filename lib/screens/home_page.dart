@@ -10,6 +10,7 @@ import '../widgets/pressable_scale.dart';
 import 'login_page.dart';
 import 'add_post_page.dart';
 import 'my_ads_page.dart';
+import 'pending_ads_page.dart';
 import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -129,12 +130,18 @@ class _HomePageState extends State<HomePage> {
                       );
                     } else if (v == 3) {
                       app.logout();
+                    } else if (v == 4) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PendingAdsPage()),
+                      );
                     }
                   },
                   itemBuilder: (_) => [
                     PopupMenuItem(value: 0, child: Text(user.email)),
                     const PopupMenuItem(value: 1, child: Text('My Ads')),
                     const PopupMenuItem(value: 2, child: Text('Profile')),
+                    if (user.isAdmin)
+                      const PopupMenuItem(value: 4, child: Text('Pending Ads')),
                     const PopupMenuItem(value: 3, child: Text('Logout')),
                   ],
                   icon: const Icon(Icons.account_circle),
@@ -153,7 +160,7 @@ class _HomePageState extends State<HomePage> {
             child: ValueListenableBuilder<List>(
           valueListenable: app.rooms,
           builder: (context, rooms, child) {
-          final allRooms = List.of(rooms.cast<Room>());
+          final allRooms = List.of(rooms.cast<Room>().where((r) => r.status == 'approved'));
 
           // compute unique districts and towns
           final districts = {

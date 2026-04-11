@@ -82,6 +82,28 @@ class RoomCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (room.status != 'approved')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: room.status == 'pending'
+                                  ? Colors.orange.shade100
+                                  : Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              room.status.toUpperCase(),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: room.status == 'pending'
+                                        ? Colors.orange.shade900
+                                        : Colors.red.shade900,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 6),
                       if ((room.town != null && room.town!.isNotEmpty) || (room.district != null && room.district!.isNotEmpty))
                         Text(

@@ -33,6 +33,9 @@ class Room extends HiveObject {
   @HiveField(8)
   final String? town;
 
+  @HiveField(9)
+  final String status;
+
   final String? id;
 
   Room({
@@ -45,6 +48,7 @@ class Room extends HiveObject {
     this.createdAt,
     this.district,
     this.town,
+    this.status = 'approved',
     this.id,
   });
 
@@ -68,6 +72,7 @@ class Room extends HiveObject {
       createdAt: createdAt,
       district: map['district'] as String?,
       town: map['town'] as String?,
+      status: map['status'] as String? ?? 'approved',
     );
   }
 
@@ -82,6 +87,7 @@ class Room extends HiveObject {
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
       'district': district,
       'town': town,
+      'status': status,
     };
   }
 }
