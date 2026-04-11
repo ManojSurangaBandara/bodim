@@ -197,6 +197,48 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     }
   }
 
+  Future<void> _togglePauseRoom(Room room) async {
+    if (room.id == null) return;
+    final parentContext = context;
+    final isPaused = room.status == 'paused';
+    final actionLabel = isPaused ? 'Resume' : 'Pause';
+    final confirmed = await showDialog<bool>(
+      context: parentContext,
+      builder: (ctx) => AlertDialog(
+        title: Text('$actionLabel Ad'),
+        content: Text('Do you want to ${actionLabel.toLowerCase()} this ad and remove it from the home page?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(actionLabel),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await FirebaseFirestore.instance.collection('rooms').doc(room.id).update({
+        'status': isPaused ? 'approved' : 'paused',
+        if (isPaused) 'rejectionReason': FieldValue.delete(),
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(parentContext).showSnackBar(
+        SnackBar(content: Text('Ad ${isPaused ? 'resumed' : 'paused'} successfully.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(parentContext).showSnackBar(
+        SnackBar(content: Text('Failed to ${isPaused ? 'resume' : 'pause'} ad: $e')),
+      );
+    }
+  }
+
   Future<void> _rejectRoom(Room room) async {
     if (room.id == null) return;
     final parentContext = context;
@@ -294,29 +336,24 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         final canDelete =
             currentUser != null && room.creatorEmail == currentUser.email;
         final canAdminReject = currentUser != null && currentUser.isAdmin;
+        final canPause = currentUser != null &&
+            (room.creatorEmail == currentUser.email || currentUser.isAdmin);
 
         return Scaffold(
           appBar: AppBar(
-            title: Row(
-              children: [
-                Icon(
-                  Icons.home_work,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'බෝඩිම්.lk',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+            title: const Icon(
+              Icons.home_work,
+              size: 28,
             ),
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             actions: [
+              if (canPause && (room.status == 'approved' || room.status == 'paused'))
+                IconButton(
+                  icon: Icon(room.status == 'paused' ? Icons.play_arrow : Icons.pause),
+                  tooltip: room.status == 'paused' ? 'Resume Ad' : 'Pause Ad',
+                  onPressed: () => _togglePauseRoom(room),
+                ),
               if (canAdminReject)
                 IconButton(
                   icon: const Icon(Icons.block),
