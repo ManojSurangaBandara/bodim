@@ -1,4 +1,4 @@
-package com.example.bodim
+package com.bodim.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -113,25 +113,7 @@ class _ProfilePageState extends State<ProfilePage> {
               controller: _phoneCtl,
               decoration: const InputDecoration(labelText: 'Phone'),
             ),
-            const SizedBox(height: 12),
-            ValueListenableBuilder<ThemeMode>(
-              valueListenable: AppState.instance.themeMode,
-              builder: (context, mode, _) {
-                final safeMode = mode == ThemeMode.dark ? ThemeMode.dark : ThemeMode.light;
-                return DropdownButtonFormField<ThemeMode>(
-                  value: safeMode,
-                  decoration: const InputDecoration(labelText: 'Theme'),
-                  items: const [
-                    DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
-                  ],
-                  onChanged: (m) {
-                    if (m != null) AppState.instance.setThemeMode(m);
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,

@@ -33,6 +33,16 @@ class _HomePageState extends State<HomePage> {
   int _loadedRoomsCount = 10;
   Timer? _connectivityTimer;
 
+  List<Room> _latestRooms = [];
+  List<Room> _cachedRooms = [];
+  List<String> _districts = [];
+  List<String> _towns = [];
+  List<Room> _filteredRooms = [];
+  List<int> _priceList = [];
+  int _minPrice = 0;
+  int _maxPrice = 0;
+  RangeValues? _effectivePriceRange;
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +105,75 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  int? _parsePrice(String? s) {
+    if (s == null) return null;
+    final digits = s.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return null;
+    return int.tryParse(digits);
+  }
+
+  void _applyFilters() {
+    _filteredRooms = _cachedRooms.where((r) {
+      if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
+        if (r.district != _selectedDistrict) return false;
+      }
+      if (_selectedTown != null && _selectedTown!.isNotEmpty) {
+        if (r.town != _selectedTown) return false;
+      }
+      if (_effectivePriceRange != null) {
+        final p = _parsePrice(r.price);
+        if (p == null) return false;
+        if (p < _effectivePriceRange!.start.round() || p > _effectivePriceRange!.end.round()) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
+
+  void _updateFilterData(List<Room> rooms) {
+    _cachedRooms = rooms.where((r) => r.status == 'approved').toList();
+
+    final districts = <String>{};
+    final towns = <String>{};
+    _priceList = [];
+
+    for (var r in _cachedRooms) {
+      if (r.district != null && r.district!.trim().isNotEmpty) {
+        districts.add(r.district!);
+      }
+      if (r.town != null && r.town!.trim().isNotEmpty) {
+        towns.add(r.town!);
+      }
+      final p = _parsePrice(r.price);
+      if (p != null) {
+        _priceList.add(p);
+      }
+    }
+
+    _districts = districts.toList()..sort();
+    _towns = towns.toList()..sort();
+
+    if (_priceList.isNotEmpty) {
+      _minPrice = _priceList.reduce(min);
+      _maxPrice = _priceList.reduce(max);
+      if (_effectivePriceRange == null) {
+        _effectivePriceRange = RangeValues(_minPrice.toDouble(), _maxPrice.toDouble());
+      } else {
+        _effectivePriceRange = RangeValues(
+          _effectivePriceRange!.start.clamp(_minPrice.toDouble(), _maxPrice.toDouble()),
+          _effectivePriceRange!.end.clamp(_minPrice.toDouble(), _maxPrice.toDouble()),
+        );
+      }
+    } else {
+      _minPrice = 0;
+      _maxPrice = 0;
+      _effectivePriceRange = null;
+    }
+
+    _applyFilters();
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = AppState.instance;
@@ -124,19 +203,6 @@ class _HomePageState extends State<HomePage> {
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         actions: [
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: AppState.instance.themeMode,
-            builder: (context, mode, _) {
-              final isDark = mode == ThemeMode.dark;
-              final icon = isDark ? Icons.nightlight_round : Icons.wb_sunny;
-              final tooltip = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
-              return IconButton(
-                icon: Icon(icon, color: Theme.of(context).colorScheme.primary),
-                tooltip: tooltip,
-                onPressed: () => AppState.instance.cycleThemeMode(),
-              );
-            },
-          ),
 
           ValueListenableBuilder(
             valueListenable: app.currentUser,
@@ -224,84 +290,16 @@ class _HomePageState extends State<HomePage> {
             ValueListenableBuilder<List>(
               valueListenable: app.rooms,
               builder: (context, rooms, child) {
-                final allRooms = List.of(rooms.cast<Room>().where((r) => r.status == 'approved'));
-
-                // compute unique districts and towns
-                final districts = {
-                  for (var r in allRooms)
-                    if (r.district != null && r.district!.trim().isNotEmpty)
-                      r.district!,
-                }.toList();
-                districts.sort();
-
-                final towns = {
-                  for (var r in allRooms)
-                    if ((_selectedDistrict == null ||
-                            r.district == _selectedDistrict) &&
-                        r.town != null &&
-                        r.town!.trim().isNotEmpty)
-                      r.town!,
-                }.toList();
-                towns.sort();
-
-                // --- price parsing / range preparation for slider & filtering ---
-                int? parsePrice(String? s) {
-                  if (s == null) return null;
-                  final digits = s.replaceAll(RegExp(r'[^0-9]'), '');
-                  if (digits.isEmpty) return null;
-                  return int.tryParse(digits);
+                final roomList = rooms.cast<Room>();
+                if (!identical(roomList, _latestRooms)) {
+                  _latestRooms = roomList;
+                  _updateFilterData(roomList);
                 }
 
-                final priceList = allRooms
-                    .map((r) => parsePrice(r.price))
-                    .whereType<int>()
-                    .toList();
-
-                int? minPrice;
-                int? maxPrice;
-                if (priceList.isNotEmpty) {
-                  minPrice = priceList.reduce((a, b) => a < b ? a : b);
-                  maxPrice = priceList.reduce((a, b) => a > b ? a : b);
-                }
-
-                // flow-safe aliases used below so the analyzer has non-null locals
-                final int minP = minPrice ?? 0;
-                final int maxP = maxPrice ?? 0;
-
-                final RangeValues? effectivePriceRange = priceList.isNotEmpty
-                    ? RangeValues(
-                        (_priceRange != null)
-                            ? _priceRange!.start.clamp(
-                                minP.toDouble(),
-                                maxP.toDouble(),
-                              )
-                            : minP.toDouble(),
-                        (_priceRange != null)
-                            ? _priceRange!.end.clamp(minP.toDouble(), maxP.toDouble())
-                            : maxP.toDouble(),
-                      )
-                    : null;
-
-                // filtered list (now includes price range when set)
-                final filtered = allRooms.where((r) {
-                  if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
-                    if (r.district != _selectedDistrict) return false;
-                  }
-                  if (_selectedTown != null && _selectedTown!.isNotEmpty) {
-                    if (r.town != _selectedTown) return false;
-                  }
-
-                  if (effectivePriceRange != null) {
-                    final p = parsePrice(r.price);
-                    if (p == null)
-                      return false; // hide unparseable-priced items when filtering
-                    if (p < effectivePriceRange.start.round() ||
-                        p > effectivePriceRange.end.round())
-                      return false;
-                  }
-
-                  return true;
-                }).toList();
+                final filtered = _filteredRooms;
+                final districts = _districts;
+                final towns = _towns;
+                final effectivePriceRange = _effectivePriceRange;
 
                 return Column(
                   children: [
@@ -494,6 +492,7 @@ class _HomePageState extends State<HomePage> {
                                                       _selectedDistrict = v;
                                                       _selectedTown = null;
                                                       _resetLoadedRooms();
+                                                      _applyFilters();
                                                     });
                                                   },
                                                 ),
@@ -530,6 +529,7 @@ class _HomePageState extends State<HomePage> {
                                                     setState(() {
                                                       _selectedTown = v;
                                                       _resetLoadedRooms();
+                                                      _applyFilters();
                                                     });
                                                   },
                                                 ),
@@ -537,7 +537,7 @@ class _HomePageState extends State<HomePage> {
                                             ],
                                           ),
                                           // Price filter (RangeSlider) — visible only when numeric prices exist
-                                          if (priceList.isNotEmpty) ...[
+                                          if (_priceList.isNotEmpty) ...[
                                             const SizedBox(height: 20),
                                             Text(
                                               'Price Range (රු./month)',
@@ -548,8 +548,8 @@ class _HomePageState extends State<HomePage> {
                                             const SizedBox(height: 8),
                                             RangeSlider(
                                               values: effectivePriceRange!,
-                                              min: minPrice!.toDouble(),
-                                              max: maxPrice!.toDouble(),
+                                              min: _minPrice.toDouble(),
+                                              max: _maxPrice.toDouble(),
                                               labels: RangeLabels(
                                                 'රු. ${effectivePriceRange.start.round()}',
                                                 'රු. ${effectivePriceRange.end.round()}',
@@ -558,6 +558,7 @@ class _HomePageState extends State<HomePage> {
                                                 setState(() {
                                                   _priceRange = v;
                                                   _resetLoadedRooms();
+                                                  _applyFilters();
                                                 });
                                               },
                                             ),
@@ -628,6 +629,7 @@ class _HomePageState extends State<HomePage> {
                                             _selectedTown = null;
                                             _priceRange = null;
                                             _resetLoadedRooms();
+                                            _applyFilters();
                                           });
                                         },
                                         icon: const Icon(Icons.refresh),

@@ -22,28 +22,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: AppState.instance.themeMode,
-      builder: (context, mode, _) {
-        final appliedTheme = (mode == ThemeMode.dark) ? AppTheme.dark() : AppTheme.light();
-
-        return AnimatedTheme(
-          data: appliedTheme,
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeInOut,
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Room Renting',
-            theme: appliedTheme,
-            home: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 350),
-              switchInCurve: Curves.easeIn,
-              switchOutCurve: Curves.easeOut,
-              child: HomePage(key: ValueKey(mode)),
-            ),
-          ),
-        );
-      },
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Room Renting',
+      theme: AppTheme.light(),
+      home: const HomePage(),
     );
   }
 }

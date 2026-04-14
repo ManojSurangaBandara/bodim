@@ -16,7 +16,6 @@ class AppState {
 
   final ValueNotifier<User?> currentUser = ValueNotifier<User?>(null);
   final ValueNotifier<List<Room>> rooms = ValueNotifier<List<Room>>([]);
-  final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
   final ValueNotifier<bool> updateAvailable = ValueNotifier<bool>(false);
   final ValueNotifier<bool> forceUpdateRequired = ValueNotifier<bool>(false);
   final ValueNotifier<String?> updateUrl = ValueNotifier<String?>(null);
@@ -32,15 +31,6 @@ class AppState {
   String? _currentVersion;
 
   Future<void> init() async {
-    final appBox = Hive.box('app');
-
-    final storedTheme = appBox.get('themeMode') as String?;
-    if (storedTheme == 'dark') {
-      themeMode.value = ThemeMode.dark;
-    } else {
-      themeMode.value = ThemeMode.light;
-    }
-
     await _initPackageInfo();
     _authSub = _auth.authStateChanges().listen(_handleAuthStateChanged);
     _listenRooms();
@@ -261,13 +251,6 @@ class AppState {
     }
   }
 
-  void setThemeMode(ThemeMode mode) {
-    themeMode.value = mode;
-    final appBox = Hive.box('app');
-    final s = mode == ThemeMode.dark ? 'dark' : 'light';
-    appBox.put('themeMode', s);
-  }
-
   Future<void> updateProfile({String? name, String? phone}) async {
     final authUser = _auth.currentUser;
     if (authUser == null) return;
@@ -295,13 +278,6 @@ class AppState {
     } catch (_) {
       return false;
     }
-  }
-
-  /// Cycle theme mode: Light <-> Dark
-  void cycleThemeMode() {
-    final current = themeMode.value;
-    final next = (current == ThemeMode.dark) ? ThemeMode.light : ThemeMode.dark;
-    setThemeMode(next);
   }
 
   void dispose() {
