@@ -45,31 +45,31 @@ class AppState {
     }
 
     final profileDoc = _firestore.collection('users').doc(authUser.uid);
-    _profileSub = profileDoc.snapshots().listen((snapshot) {
-      final data = snapshot.data();
-      if (data != null) {
-        currentUser.value = User(
-          authUser.email ?? '',
-          name: data['name'] as String?,
-          phone: data['phone'] as String?,
-          isAdmin: data['isAdmin'] as bool? ?? false,
-        );
-      } else {
-        final user = User(authUser.email ?? '');
-        currentUser.value = user;
-        profileDoc.set(
-          {
+    _profileSub = profileDoc.snapshots().listen(
+      (snapshot) {
+        final data = snapshot.data();
+        if (data != null) {
+          currentUser.value = User(
+            authUser.email ?? '',
+            name: data['name'] as String?,
+            phone: data['phone'] as String?,
+            isAdmin: data['isAdmin'] as bool? ?? false,
+          );
+        } else {
+          final user = User(authUser.email ?? '');
+          currentUser.value = user;
+          profileDoc.set({
             'email': authUser.email,
             'name': null,
             'phone': null,
             'isAdmin': false,
-          },
-          SetOptions(merge: true),
-        );
-      }
-    }, onError: (_) {
-      currentUser.value = User(authUser.email ?? '');
-    });
+          }, SetOptions(merge: true));
+        }
+      },
+      onError: (_) {
+        currentUser.value = User(authUser.email ?? '');
+      },
+    );
   }
 
   void _listenRooms() {
@@ -79,10 +79,10 @@ class AppState {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snapshot) {
-      rooms.value = snapshot.docs
-          .map((doc) => Room.fromMap(doc.data(), id: doc.id))
-          .toList();
-    });
+          rooms.value = snapshot.docs
+              .map((doc) => Room.fromMap(doc.data(), id: doc.id))
+              .toList();
+        });
   }
 
   Future<void> _initPackageInfo() async {
@@ -90,7 +90,8 @@ class AppState {
       final info = await PackageInfo.fromPlatform();
       _packageName = info.packageName;
       _currentVersion = info.version;
-      updateUrl.value = 'https://play.google.com/store/apps/details?id=${info.packageName}';
+      updateUrl.value =
+          'https://play.google.com/store/apps/details?id=${info.packageName}';
     } catch (_) {
       _packageName = null;
       _currentVersion = null;
@@ -103,22 +104,28 @@ class AppState {
         .collection('app_config')
         .doc('updates')
         .snapshots()
-        .listen((snapshot) {
-      final data = snapshot.data();
-      if (data == null) return;
-      final latest = data['latestVersion'] as String?;
-      final minSupported = data['minSupportedVersion'] as String?;
-      final url = data['updateUrl'] as String?;
-      if (url != null && url.isNotEmpty) {
-        updateUrl.value = url;
-      }
-      _evaluateVersionState(latest, minSupported);
-    }, onError: (_) {
-      // keep existing values if config cannot be loaded
-    });
+        .listen(
+          (snapshot) {
+            final data = snapshot.data();
+            if (data == null) return;
+            final latest = data['latestVersion'] as String?;
+            final minSupported = data['minSupportedVersion'] as String?;
+            final url = data['updateUrl'] as String?;
+            if (url != null && url.isNotEmpty) {
+              updateUrl.value = url;
+            }
+            _evaluateVersionState(latest, minSupported);
+          },
+          onError: (_) {
+            // keep existing values if config cannot be loaded
+          },
+        );
   }
 
-  void _evaluateVersionState(String? latestVersion, String? minSupportedVersion) {
+  void _evaluateVersionState(
+    String? latestVersion,
+    String? minSupportedVersion,
+  ) {
     final current = _currentVersion;
     if (current == null || latestVersion == null) {
       updateAvailable.value = false;
@@ -141,7 +148,9 @@ class AppState {
   int _compareVersionStrings(String a, String b) {
     final aParts = a.split('.').map(int.tryParse).map((v) => v ?? 0).toList();
     final bParts = b.split('.').map(int.tryParse).map((v) => v ?? 0).toList();
-    final maxLen = aParts.length > bParts.length ? aParts.length : bParts.length;
+    final maxLen = aParts.length > bParts.length
+        ? aParts.length
+        : bParts.length;
     for (var i = 0; i < maxLen; i++) {
       final aVal = i < aParts.length ? aParts[i] : 0;
       final bVal = i < bParts.length ? bParts[i] : 0;
@@ -159,7 +168,12 @@ class AppState {
     }
   }
 
-  Future<bool> register(String email, String password) async {
+  Future<bool> register(
+    String email,
+    String password, {
+    String? name,
+    String? phone,
+  }) async {
     try {
       final result = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -167,13 +181,11 @@ class AppState {
       );
       final uid = result.user?.uid;
       if (uid != null) {
-        await _firestore.collection('users').doc(uid).set(
-          {
-            'email': email,
-            'name': null,
-            'phone': null,
-          },
-        );
+        await _firestore.collection('users').doc(uid).set({
+          'email': email,
+          'name': name,
+          'phone': phone,
+        });
       }
       return true;
     } catch (_) {
@@ -191,10 +203,13 @@ class AppState {
       throw StateError('User must be signed in to add a room');
     }
     try {
-      await _firestore.collection('rooms').add(room.toMap()).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw TimeoutException('Add room timed out'),
-      );
+      await _firestore
+          .collection('rooms')
+          .add(room.toMap())
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw TimeoutException('Add room timed out'),
+          );
       return true;
     } catch (e, st) {
       debugPrint('Failed to add room: $e\n$st');
@@ -223,10 +238,14 @@ class AppState {
         }
       }
 
-      await _firestore.collection('rooms').doc(room.id).delete().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw TimeoutException('Delete room timed out'),
-      );
+      await _firestore
+          .collection('rooms')
+          .doc(room.id)
+          .delete()
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw TimeoutException('Delete room timed out'),
+          );
       return true;
     } catch (e, st) {
       debugPrint('Failed to delete room: $e\n$st');
@@ -236,14 +255,20 @@ class AppState {
 
   Future<bool> updateRoom(Room oldRoom, Room newRoom) async {
     final user = currentUser.value;
-    if (user == null || oldRoom.creatorEmail != user.email || oldRoom.id == null) {
+    if (user == null ||
+        oldRoom.creatorEmail != user.email ||
+        oldRoom.id == null) {
       return false;
     }
     try {
-      await _firestore.collection('rooms').doc(oldRoom.id!).update(newRoom.toMap()).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw TimeoutException('Update room timed out'),
-      );
+      await _firestore
+          .collection('rooms')
+          .doc(oldRoom.id!)
+          .update(newRoom.toMap())
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw TimeoutException('Update room timed out'),
+          );
       return true;
     } catch (e, st) {
       debugPrint('Failed to update room: $e\n$st');
@@ -254,13 +279,10 @@ class AppState {
   Future<void> updateProfile({String? name, String? phone}) async {
     final authUser = _auth.currentUser;
     if (authUser == null) return;
-    await _firestore.collection('users').doc(authUser.uid).set(
-      {
-        'name': name,
-        'phone': phone,
-      },
-      SetOptions(merge: true),
-    );
+    await _firestore.collection('users').doc(authUser.uid).set({
+      'name': name,
+      'phone': phone,
+    }, SetOptions(merge: true));
   }
 
   Future<bool> changePassword(String current, String newPassword) async {
