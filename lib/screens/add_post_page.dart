@@ -540,9 +540,9 @@ class _AddPostPageState extends State<AddPostPage> {
     ],
   };
 
-  static const double _imageMaxWidth = 800.0;
-  static const double _imageMaxHeight = 800.0;
-  static const int _imageQuality = 70;
+  static const double _imageMaxWidth = 1200.0;
+  static const double _imageMaxHeight = 1200.0;
+  static const int _imageQuality = 90;
 
   Future<void> _pickImages() async {
     final picked = await _picker.pickMultiImage(
@@ -590,9 +590,9 @@ class _AddPostPageState extends State<AddPostPage> {
       final compressedFile = await FlutterImageCompress.compressAndGetFile(
         file.absolute.path,
         targetPath,
-        quality: 50,
-        minWidth: 720,
-        minHeight: 720,
+        quality: 85,
+        minWidth: 1024,
+        minHeight: 1024,
         keepExif: false,
       );
       if (compressedFile == null) return file;
