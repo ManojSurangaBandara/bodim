@@ -39,13 +39,18 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
         data['rejectionReason'] = null;
       }
 
-      await FirebaseFirestore.instance.collection('rooms').doc(room.id).update(data);
+      await FirebaseFirestore.instance
+          .collection('rooms')
+          .doc(room.id)
+          .update(data);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(status == 'approved'
-              ? 'Ad approved successfully.'
-              : 'Ad rejected successfully.'),
+          content: Text(
+            status == 'approved'
+                ? 'Ad approved successfully.'
+                : 'Ad rejected successfully.',
+          ),
         ),
       );
     } catch (e) {
@@ -69,7 +74,16 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
     await showDialog<void>(
       context: context,
       builder: (context) {
+        final theme = Theme.of(context);
         return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          titleTextStyle: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+          contentTextStyle: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
           title: const Text('Select reject reason'),
           content: SizedBox(
             width: double.maxFinite,
@@ -87,18 +101,32 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Text('No reject reasons available. Add them in Reject Reasons.');
+                  return const Text(
+                    'No reject reasons available. Add them in Reject Reasons.',
+                  );
                 }
 
                 return ListView.separated(
                   shrinkWrap: true,
                   itemCount: snapshot.data!.docs.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: theme.dividerColor),
                   itemBuilder: (context, index) {
                     final doc = snapshot.data!.docs[index];
                     final text = doc.data()['text'] as String? ?? '';
                     return ListTile(
-                      title: Text(text),
+                      title: Text(
+                        text,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      tileColor: theme.colorScheme.surfaceVariant.withOpacity(
+                        0.4,
+                      ),
                       onTap: () {
                         Navigator.of(context).pop();
                         _updateRoomStatus(
@@ -117,6 +145,9 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary,
+              ),
               child: const Text('Cancel'),
             ),
           ],
@@ -192,159 +223,214 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
               );
             }
 
-            final pendingRooms = rooms.cast<Room>().where((room) => room.status == 'pending').toList();
+            final pendingRooms = rooms
+                .cast<Room>()
+                .where((room) => room.status == 'pending')
+                .toList();
 
-          if (pendingRooms.isEmpty) {
-            return const Center(
-              child: Card(
-                margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('There are no pending ads at the moment.'),
-                ),
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-            itemCount: pendingRooms.length,
-            itemBuilder: (context, index) {
-              final room = pendingRooms[index];
-              final isProcessing = room.id != null && _processing.contains(room.id);
-              return Card(
-                color: Theme.of(context).colorScheme.surface,
-                margin: const EdgeInsets.only(bottom: 12),
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                clipBehavior: Clip.hardEdge,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (room.images != null && room.images!.isNotEmpty)
-                      SizedBox(
-                        height: 180,
-                        child: PageView.builder(
-                          itemCount: room.images!.length,
-                          itemBuilder: (context, imageIndex) {
-                            final src = room.images![imageIndex];
-                            return src.startsWith('http')
-                                ? Image.network(
-                                    src,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return const Center(child: CircularProgressIndicator());
-                                    },
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Theme.of(context).colorScheme.surfaceVariant,
-                                        child: const Center(child: Icon(Icons.broken_image, size: 48)),
-                                      );
-                                    },
-                                  )
-                                : Image.file(
-                                    File(src),
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                  );
-                          },
-                        ),
-                      )
-                    else
-                      Container(
-                        height: 180,
-                        color: Theme.of(context).colorScheme.surfaceVariant,
-                        child: Center(
-                          child: Icon(
-                            Icons.photo_library,
-                            size: 48,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.all(14.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            room.title,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 6),
-                          Text('රු. ${room.price}', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary)),
-                          const SizedBox(height: 8),
-                          if (room.description != null && room.description!.isNotEmpty)
-                            Text(room.description!),
-                          if (room.contact != null && room.contact!.isNotEmpty) ...[
-                            const SizedBox(height: 10),
-                            Text('Contact: ${room.contact!}'),
-                          ],
-                          if (room.district != null && room.district!.isNotEmpty) ...[
-                            const SizedBox(height: 10),
-                            Text('Location: ${room.town ?? ''}${room.town != null && room.town!.isNotEmpty ? ', ' : ''}${room.district!}'),
-                          ],
-                          if (room.creatorEmail != null && room.creatorEmail!.isNotEmpty) ...[
-                            const SizedBox(height: 10),
-                            Text('Creator: ${room.creatorEmail!}'),
-                          ],
-                          if (room.createdAt != null) ...[
-                            const SizedBox(height: 10),
-                            Text('Created: ${_timeAgo(room.createdAt!)}'),
-                          ],
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.redAccent,
-                                    side: const BorderSide(color: Colors.redAccent),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  onPressed: isProcessing ? null : () => _showRejectReasonDialog(room),
-                                  child: isProcessing
-                                      ? const SizedBox(
-                                          height: 18,
-                                          width: 18,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : const Text('Reject'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green.shade600,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  onPressed: isProcessing ? null : () => _updateRoomStatus(context, room, 'approved'),
-                                  child: isProcessing
-                                      ? const SizedBox(
-                                          height: 18,
-                                          width: 18,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                        )
-                                      : const Text('Approve'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+            if (pendingRooms.isEmpty) {
+              return const Center(
+                child: Card(
+                  margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('There are no pending ads at the moment.'),
+                  ),
                 ),
               );
-            },
-          );
-        },
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              itemCount: pendingRooms.length,
+              itemBuilder: (context, index) {
+                final room = pendingRooms[index];
+                final isProcessing =
+                    room.id != null && _processing.contains(room.id);
+                return Card(
+                  color: Theme.of(context).colorScheme.surface,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (room.images != null && room.images!.isNotEmpty)
+                        SizedBox(
+                          height: 180,
+                          child: PageView.builder(
+                            itemCount: room.images!.length,
+                            itemBuilder: (context, imageIndex) {
+                              final src = room.images![imageIndex];
+                              return src.startsWith('http')
+                                  ? Image.network(
+                                      src,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.surfaceVariant,
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.broken_image,
+                                                  size: 48,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                    )
+                                  : Image.file(
+                                      File(src),
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    );
+                            },
+                          ),
+                        )
+                      else
+                        Container(
+                          height: 180,
+                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          child: Center(
+                            child: Icon(
+                              Icons.photo_library,
+                              size: 48,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(14.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              room.title,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'රු. ${room.price}',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            if (room.description != null &&
+                                room.description!.isNotEmpty)
+                              Text(room.description!),
+                            if (room.contact != null &&
+                                room.contact!.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Text('Contact: ${room.contact!}'),
+                            ],
+                            if (room.district != null &&
+                                room.district!.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Text(
+                                'Location: ${room.town ?? ''}${room.town != null && room.town!.isNotEmpty ? ', ' : ''}${room.district!}',
+                              ),
+                            ],
+                            if (room.creatorEmail != null &&
+                                room.creatorEmail!.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Text('Creator: ${room.creatorEmail!}'),
+                            ],
+                            if (room.createdAt != null) ...[
+                              const SizedBox(height: 10),
+                              Text('Created: ${_timeAgo(room.createdAt!)}'),
+                            ],
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.redAccent,
+                                      side: const BorderSide(
+                                        color: Colors.redAccent,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: isProcessing
+                                        ? null
+                                        : () => _showRejectReasonDialog(room),
+                                    child: isProcessing
+                                        ? const SizedBox(
+                                            height: 18,
+                                            width: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text('Reject'),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green.shade600,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: isProcessing
+                                        ? null
+                                        : () => _updateRoomStatus(
+                                            context,
+                                            room,
+                                            'approved',
+                                          ),
+                                    child: isProcessing
+                                        ? const SizedBox(
+                                            height: 18,
+                                            width: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text('Approve'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
