@@ -723,6 +723,11 @@ class _AddPostPageState extends State<AddPostPage> {
       return;
     }
 
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Your ad is under review')));
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
     Navigator.of(context).pop();
   }
 
