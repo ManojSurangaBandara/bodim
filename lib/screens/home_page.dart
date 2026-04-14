@@ -62,9 +62,9 @@ class _HomePageState extends State<HomePage> {
   Future<void> _checkConnectivity() async {
     bool connected = false;
     try {
-      final result = await InternetAddress.lookup('example.com').timeout(
-        const Duration(seconds: 5),
-      );
+      final result = await InternetAddress.lookup(
+        'example.com',
+      ).timeout(const Duration(seconds: 5));
       connected = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (_) {
       connected = false;
@@ -105,6 +105,16 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _resetAllFilters() {
+    setState(() {
+      _selectedDistrict = null;
+      _selectedTown = null;
+      _priceRange = null;
+      _loadedRoomsCount = _pageSize;
+      _applyFilters();
+    });
+  }
+
   int? _parsePrice(String? s) {
     if (s == null) return null;
     final digits = s.replaceAll(RegExp(r'[^0-9]'), '');
@@ -120,10 +130,11 @@ class _HomePageState extends State<HomePage> {
       if (_selectedTown != null && _selectedTown!.isNotEmpty) {
         if (r.town != _selectedTown) return false;
       }
-      if (_effectivePriceRange != null) {
+      final selectedRange = _priceRange ?? _effectivePriceRange;
+      if (selectedRange != null) {
         final p = _parsePrice(r.price);
         if (p == null) return false;
-        if (p < _effectivePriceRange!.start.round() || p > _effectivePriceRange!.end.round()) {
+        if (p < selectedRange.start.round() || p > selectedRange.end.round()) {
           return false;
         }
       }
@@ -157,18 +168,21 @@ class _HomePageState extends State<HomePage> {
     if (_priceList.isNotEmpty) {
       _minPrice = _priceList.reduce(min);
       _maxPrice = _priceList.reduce(max);
-      if (_effectivePriceRange == null) {
-        _effectivePriceRange = RangeValues(_minPrice.toDouble(), _maxPrice.toDouble());
-      } else {
-        _effectivePriceRange = RangeValues(
-          _effectivePriceRange!.start.clamp(_minPrice.toDouble(), _maxPrice.toDouble()),
-          _effectivePriceRange!.end.clamp(_minPrice.toDouble(), _maxPrice.toDouble()),
+      _effectivePriceRange = RangeValues(
+        _minPrice.toDouble(),
+        _maxPrice.toDouble(),
+      );
+      if (_priceRange != null) {
+        _priceRange = RangeValues(
+          _priceRange!.start.clamp(_minPrice.toDouble(), _maxPrice.toDouble()),
+          _priceRange!.end.clamp(_minPrice.toDouble(), _maxPrice.toDouble()),
         );
       }
     } else {
       _minPrice = 0;
       _maxPrice = 0;
       _effectivePriceRange = null;
+      _priceRange = null;
     }
 
     _applyFilters();
@@ -203,20 +217,22 @@ class _HomePageState extends State<HomePage> {
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         actions: [
-
           ValueListenableBuilder(
             valueListenable: app.currentUser,
             builder: (context, user, child) {
               if (user == null) {
                 return TextButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                  ),
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => const LoginPage())),
                   icon: const Icon(Icons.login),
                   label: const Text('Login'),
                   style: TextButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                 );
               } else {
@@ -234,11 +250,15 @@ class _HomePageState extends State<HomePage> {
                       app.logout();
                     } else if (v == 4) {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const PendingAdsPage()),
+                        MaterialPageRoute(
+                          builder: (_) => const PendingAdsPage(),
+                        ),
                       );
                     } else if (v == 5) {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const RejectReasonsPage()),
+                        MaterialPageRoute(
+                          builder: (_) => const RejectReasonsPage(),
+                        ),
                       );
                     }
                   },
@@ -247,7 +267,10 @@ class _HomePageState extends State<HomePage> {
                       value: 0,
                       child: Row(
                         children: [
-                          Icon(Icons.email, color: Theme.of(context).colorScheme.primary),
+                          Icon(
+                            Icons.email,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           const SizedBox(width: 8),
                           Text(user.email),
                         ],
@@ -257,7 +280,10 @@ class _HomePageState extends State<HomePage> {
                     const PopupMenuItem(value: 2, child: Text('Profile')),
                     if (user.isAdmin) ...[
                       const PopupMenuItem(value: 4, child: Text('Pending Ads')),
-                      const PopupMenuItem(value: 5, child: Text('Reject Reasons')),
+                      const PopupMenuItem(
+                        value: 5,
+                        child: Text('Reject Reasons'),
+                      ),
                     ],
                     const PopupMenuItem(value: 3, child: Text('Logout')),
                   ],
@@ -291,15 +317,34 @@ class _HomePageState extends State<HomePage> {
               valueListenable: app.rooms,
               builder: (context, rooms, child) {
                 final roomList = rooms.cast<Room>();
-                if (!identical(roomList, _latestRooms)) {
-                  _latestRooms = roomList;
-                  _updateFilterData(roomList);
+                final oldRoomsById = {
+                  for (var room in _latestRooms)
+                    if (room.id != null) room.id!: room,
+                };
+                final becameApproved = roomList.any((newRoom) {
+                  if (newRoom.id == null) return false;
+                  final oldRoom = oldRoomsById[newRoom.id];
+                  return oldRoom != null &&
+                      (oldRoom.status == 'paused' ||
+                          oldRoom.status == 'pending') &&
+                      newRoom.status == 'approved';
+                });
+
+                if (becameApproved) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _resetAllFilters();
+                  });
                 }
+
+                _latestRooms = roomList;
+                _updateFilterData(roomList);
 
                 final filtered = _filteredRooms;
                 final districts = _districts;
                 final towns = _towns;
                 final effectivePriceRange = _effectivePriceRange;
+                final selectedPriceRange = _priceRange ?? effectivePriceRange;
 
                 return Column(
                   children: [
@@ -336,9 +381,13 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   ElevatedButton(
                                     onPressed: () async {
-                                      final url = AppState.instance.updateUrl.value;
+                                      final url =
+                                          AppState.instance.updateUrl.value;
                                       if (url != null) {
-                                        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                                        await launchUrl(
+                                          Uri.parse(url),
+                                          mode: LaunchMode.externalApplication,
+                                        );
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -359,27 +408,38 @@ class _HomePageState extends State<HomePage> {
                     ),
                     if (_isOffline || _showBackOnline)
                       Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         child: Card(
                           elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          color: _isOffline ? Colors.red.shade50 : Colors.green.shade50,
+                          color: _isOffline
+                              ? Colors.red.shade50
+                              : Colors.green.shade50,
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: Row(
                               children: [
                                 Icon(
                                   _isOffline ? Icons.wifi_off : Icons.wifi,
-                                  color: _isOffline ? Colors.red.shade700 : Colors.green.shade700,
+                                  color: _isOffline
+                                      ? Colors.red.shade700
+                                      : Colors.green.shade700,
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    _isOffline ? 'You\'re offline — check your connection' : 'Back online!',
+                                    _isOffline
+                                        ? 'You\'re offline — check your connection'
+                                        : 'Back online!',
                                     style: TextStyle(
-                                      color: _isOffline ? Colors.red.shade800 : Colors.green.shade800,
+                                      color: _isOffline
+                                          ? Colors.red.shade800
+                                          : Colors.green.shade800,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -417,13 +477,19 @@ class _HomePageState extends State<HomePage> {
                               },
                               child: Row(
                                 children: [
-                                  Icon(Icons.filter_list, color: Theme.of(context).colorScheme.primary),
+                                  Icon(
+                                    Icons.filter_list,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Filters',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                   const Spacer(),
                                   IconButton(
@@ -438,8 +504,14 @@ class _HomePageState extends State<HomePage> {
                                     },
                                   ),
                                   IconButton(
-                                    tooltip: _filtersExpanded ? 'Collapse filters' : 'Expand filters',
-                                    icon: Icon(_filtersExpanded ? Icons.expand_less : Icons.expand_more),
+                                    tooltip: _filtersExpanded
+                                        ? 'Collapse filters'
+                                        : 'Expand filters',
+                                    icon: Icon(
+                                      _filtersExpanded
+                                          ? Icons.expand_less
+                                          : Icons.expand_more,
+                                    ),
                                     onPressed: () {
                                       setState(() {
                                         _filtersExpanded = !_filtersExpanded;
@@ -456,7 +528,8 @@ class _HomePageState extends State<HomePage> {
                                   ? Padding(
                                       padding: const EdgeInsets.only(top: 16),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
@@ -464,25 +537,36 @@ class _HomePageState extends State<HomePage> {
                                                 child: DropdownButtonFormField<String>(
                                                   isExpanded: true,
                                                   value:
-                                                      (_selectedDistrict != null &&
-                                                          districts.contains(_selectedDistrict))
+                                                      (_selectedDistrict !=
+                                                              null &&
+                                                          districts.contains(
+                                                            _selectedDistrict,
+                                                          ))
                                                       ? _selectedDistrict
                                                       : null,
                                                   decoration: InputDecoration(
                                                     labelText: 'District',
-                                                    prefixIcon: const Icon(Icons.location_city),
+                                                    prefixIcon: const Icon(
+                                                      Icons.location_city,
+                                                    ),
                                                     border: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(12),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
                                                     ),
-                                                    contentPadding: const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 8,
-                                                    ),
+                                                    contentPadding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 8,
+                                                        ),
                                                   ),
                                                   items: ['All', ...districts]
                                                       .map(
                                                         (d) => DropdownMenuItem(
-                                                          value: d == 'All' ? null : d,
+                                                          value: d == 'All'
+                                                              ? null
+                                                              : d,
                                                           child: Text(d),
                                                         ),
                                                       )
@@ -503,24 +587,34 @@ class _HomePageState extends State<HomePage> {
                                                   isExpanded: true,
                                                   value:
                                                       (_selectedTown != null &&
-                                                          towns.contains(_selectedTown))
+                                                          towns.contains(
+                                                            _selectedTown,
+                                                          ))
                                                       ? _selectedTown
                                                       : null,
                                                   decoration: InputDecoration(
                                                     labelText: 'Town',
-                                                    prefixIcon: const Icon(Icons.location_on),
+                                                    prefixIcon: const Icon(
+                                                      Icons.location_on,
+                                                    ),
                                                     border: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(12),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
                                                     ),
-                                                    contentPadding: const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 8,
-                                                    ),
+                                                    contentPadding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 8,
+                                                        ),
                                                   ),
                                                   items: ['All', ...towns]
                                                       .map(
                                                         (t) => DropdownMenuItem(
-                                                          value: t == 'All' ? null : t,
+                                                          value: t == 'All'
+                                                              ? null
+                                                              : t,
                                                           child: Text(t),
                                                         ),
                                                       )
@@ -541,18 +635,21 @@ class _HomePageState extends State<HomePage> {
                                             const SizedBox(height: 20),
                                             Text(
                                               'Price Range (රු./month)',
-                                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleSmall
+                                                  ?.copyWith(
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                             ),
                                             const SizedBox(height: 8),
                                             RangeSlider(
-                                              values: effectivePriceRange!,
+                                              values: selectedPriceRange!,
                                               min: _minPrice.toDouble(),
                                               max: _maxPrice.toDouble(),
                                               labels: RangeLabels(
-                                                'රු. ${effectivePriceRange.start.round()}',
-                                                'රු. ${effectivePriceRange.end.round()}',
+                                                'රු. ${selectedPriceRange.start.round()}',
+                                                'රු. ${selectedPriceRange.end.round()}',
                                               ),
                                               onChanged: (v) {
                                                 setState(() {
@@ -563,15 +660,21 @@ class _HomePageState extends State<HomePage> {
                                               },
                                             ),
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Text(
-                                                  'Min: රු. ${effectivePriceRange.start.round()}',
-                                                  style: Theme.of(context).textTheme.bodySmall,
+                                                  'Min: රු. ${selectedPriceRange!.start.round()}',
+                                                  style: Theme.of(
+                                                    context,
+                                                  ).textTheme.bodySmall,
                                                 ),
                                                 Text(
-                                                  'Max: රු. ${effectivePriceRange.end.round()}',
-                                                  style: Theme.of(context).textTheme.bodySmall,
+                                                  'Max: රු. ${selectedPriceRange!.end.round()}',
+                                                  style: Theme.of(
+                                                    context,
+                                                  ).textTheme.bodySmall,
                                                 ),
                                               ],
                                             ),
@@ -602,23 +705,31 @@ class _HomePageState extends State<HomePage> {
                                       Icon(
                                         Icons.search_off,
                                         size: 80,
-                                        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary.withOpacity(0.7),
                                       ),
                                       const SizedBox(height: 24),
                                       Text(
                                         'No rooms found',
-                                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.primary,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
                                             ),
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
                                         'Try adjusting your filters or check back later for new listings.',
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              color: Colors.grey[600],
-                                            ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(color: Colors.grey[600]),
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: 24),
@@ -635,9 +746,14 @@ class _HomePageState extends State<HomePage> {
                                         icon: const Icon(Icons.refresh),
                                         label: const Text('Clear Filters'),
                                         style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 12,
+                                          ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -662,16 +778,27 @@ class _HomePageState extends State<HomePage> {
                                 return false;
                               },
                               child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                                itemCount: min(filtered.length, _loadedRoomsCount) +
-                                    (filtered.length > _loadedRoomsCount ? 1 : 0),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 2,
+                                ),
+                                itemCount:
+                                    min(filtered.length, _loadedRoomsCount) +
+                                    (filtered.length > _loadedRoomsCount
+                                        ? 1
+                                        : 0),
                                 itemBuilder: (context, index) {
-                                  if (index >= min(filtered.length, _loadedRoomsCount)) {
+                                  if (index >=
+                                      min(filtered.length, _loadedRoomsCount)) {
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
                                       child: Center(
                                         child: CircularProgressIndicator(
-                                          color: Theme.of(context).colorScheme.primary,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
                                         ),
                                       ),
                                     );
@@ -718,9 +845,8 @@ class _HomePageState extends State<HomePage> {
                               const SizedBox(height: 16),
                               Text(
                                 'Update Required',
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 12),
                               const Text(
@@ -732,11 +858,17 @@ class _HomePageState extends State<HomePage> {
                                 onPressed: () async {
                                   final url = AppState.instance.updateUrl.value;
                                   if (url != null) {
-                                    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                                    await launchUrl(
+                                      Uri.parse(url),
+                                      mode: LaunchMode.externalApplication,
+                                    );
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -782,9 +914,8 @@ class _HomePageState extends State<HomePage> {
                               const SizedBox(height: 16),
                               Text(
                                 'Update Required',
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 12),
                               const Text(
@@ -796,11 +927,17 @@ class _HomePageState extends State<HomePage> {
                                 onPressed: () async {
                                   final url = AppState.instance.updateUrl.value;
                                   if (url != null) {
-                                    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                                    await launchUrl(
+                                      Uri.parse(url),
+                                      mode: LaunchMode.externalApplication,
+                                    );
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -846,9 +983,9 @@ class _HomePageState extends State<HomePage> {
             ),
             child: PressableScale(
               child: FloatingActionButton.extended(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AddPostPage()),
-                ),
+                onPressed: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const AddPostPage())),
                 tooltip: 'Add New Room Listing',
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(

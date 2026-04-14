@@ -65,6 +65,7 @@ class Room extends HiveObject {
       createdAt = createdAtField;
     }
 
+    final statusValue = (map['status'] as String?)?.trim().toLowerCase();
     return Room(
       id: id,
       title: map['title'] as String? ?? '',
@@ -76,7 +77,9 @@ class Room extends HiveObject {
       createdAt: createdAt,
       district: map['district'] as String?,
       town: map['town'] as String?,
-      status: map['status'] as String? ?? 'approved',
+      status: statusValue == null || statusValue.isEmpty
+          ? 'approved'
+          : statusValue,
       rejectionReason: map['rejectionReason'] as String?,
     );
   }
