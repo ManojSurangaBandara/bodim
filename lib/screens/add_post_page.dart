@@ -573,9 +573,9 @@ class _AddPostPageState extends State<AddPostPage> {
 
   Future<bool> _hasNetworkConnection() async {
     try {
-      final result = await InternetAddress.lookup('example.com').timeout(
-        const Duration(seconds: 5),
-      );
+      final result = await InternetAddress.lookup(
+        'example.com',
+      ).timeout(const Duration(seconds: 5));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (_) {
       return false;
@@ -585,7 +585,8 @@ class _AddPostPageState extends State<AddPostPage> {
   Future<File> _compressImageFile(File file) async {
     try {
       final tempDir = await getTemporaryDirectory();
-      final targetPath = '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}-${file.path.split(Platform.pathSeparator).last}';
+      final targetPath =
+          '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}-${file.path.split(Platform.pathSeparator).last}';
       final compressedFile = await FlutterImageCompress.compressAndGetFile(
         file.absolute.path,
         targetPath,
@@ -607,12 +608,15 @@ class _AddPostPageState extends State<AddPostPage> {
     if (!file.existsSync()) return null;
 
     final uploadFile = await _compressImageFile(file);
-    final filename = 'rooms/${DateTime.now().millisecondsSinceEpoch}-${uploadFile.path.split(Platform.pathSeparator).last}';
+    final filename =
+        'rooms/${DateTime.now().millisecondsSinceEpoch}-${uploadFile.path.split(Platform.pathSeparator).last}';
     final ref = FirebaseStorage.instance.ref(filename);
-    await ref.putFile(uploadFile).timeout(
-      const Duration(seconds: 45),
-      onTimeout: () => throw TimeoutException('Image upload timed out'),
-    );
+    await ref
+        .putFile(uploadFile)
+        .timeout(
+          const Duration(seconds: 45),
+          onTimeout: () => throw TimeoutException('Image upload timed out'),
+        );
     return await ref.getDownloadURL().timeout(
       const Duration(seconds: 20),
       onTimeout: () => throw TimeoutException('Failed to get image URL'),
@@ -661,7 +665,9 @@ class _AddPostPageState extends State<AddPostPage> {
     if (!hasNetwork) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No internet connection. Please try again when you are online.'),
+          content: Text(
+            'No internet connection. Please try again when you are online.',
+          ),
         ),
       );
       return;
@@ -677,7 +683,9 @@ class _AddPostPageState extends State<AddPostPage> {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Unable to upload images. Check your connection and try again.'),
+          content: Text(
+            'Unable to upload images. Check your connection and try again.',
+          ),
         ),
       );
       return;
@@ -707,7 +715,9 @@ class _AddPostPageState extends State<AddPostPage> {
     if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Unable to save the ad. Please check your internet connection and try again.'),
+          content: Text(
+            'Unable to save the ad. Please check your internet connection and try again.',
+          ),
         ),
       );
       return;
@@ -749,14 +759,17 @@ class _AddPostPageState extends State<AddPostPage> {
             children: [
               Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
                 margin: EdgeInsets.zero,
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (widget.roomToEdit?.status == 'rejected' && widget.roomToEdit?.rejectionReason != null)
+                      if (widget.roomToEdit?.status == 'rejected' &&
+                          widget.roomToEdit?.rejectionReason != null)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(14.0),
@@ -771,7 +784,8 @@ class _AddPostPageState extends State<AddPostPage> {
                             children: [
                               Text(
                                 'Rejected reason',
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.red.shade900,
                                     ),
@@ -784,7 +798,8 @@ class _AddPostPageState extends State<AddPostPage> {
                               const SizedBox(height: 8),
                               Text(
                                 'Please update the ad and submit again.',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: Colors.red.shade700),
                               ),
                             ],
                           ),
@@ -831,12 +846,15 @@ class _AddPostPageState extends State<AddPostPage> {
                           border: OutlineInputBorder(),
                         ),
                         items: _districtTowns.keys
-                            .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                            .map(
+                              (d) => DropdownMenuItem(value: d, child: Text(d)),
+                            )
                             .toList(),
                         onChanged: (v) {
                           setState(() {
                             _selectedDistrict = v;
-                            _selectedTown = null; // reset town when district changes
+                            _selectedTown =
+                                null; // reset town when district changes
                           });
                         },
                       ),
@@ -849,7 +867,12 @@ class _AddPostPageState extends State<AddPostPage> {
                         ),
                         items: _selectedDistrict != null
                             ? _districtTowns[_selectedDistrict]!
-                                  .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                                  .map(
+                                    (t) => DropdownMenuItem(
+                                      value: t,
+                                      child: Text(t),
+                                    ),
+                                  )
                                   .toList()
                             : [],
                         onChanged: _selectedDistrict == null
@@ -865,7 +888,9 @@ class _AddPostPageState extends State<AddPostPage> {
                             onReorder: (oldIndex, newIndex) {
                               setState(() {
                                 if (newIndex > oldIndex) newIndex -= 1;
-                                final item = _localImagePaths.removeAt(oldIndex);
+                                final item = _localImagePaths.removeAt(
+                                  oldIndex,
+                                );
                                 _localImagePaths.insert(newIndex, item);
                               });
                             },
@@ -877,16 +902,26 @@ class _AddPostPageState extends State<AddPostPage> {
                                   ? Image.network(
                                       p,
                                       fit: BoxFit.cover,
-                                      loadingBuilder: (context, child, loadingProgress) {
-                                        if (loadingProgress == null) return child;
-                                        return const Center(child: CircularProgressIndicator());
-                                      },
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          color: Theme.of(context).colorScheme.surfaceVariant,
-                                          child: const Center(child: Icon(Icons.broken_image)),
-                                        );
-                                      },
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.surfaceVariant,
+                                              child: const Center(
+                                                child: Icon(Icons.broken_image),
+                                              ),
+                                            );
+                                          },
                                     )
                                   : Image.file(
                                       File(p),
@@ -910,14 +945,22 @@ class _AddPostPageState extends State<AddPostPage> {
                                           right: 4,
                                           child: CircleAvatar(
                                             radius: 14,
-                                            backgroundColor:
-                                                Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withOpacity(0.45),
                                             child: IconButton(
                                               padding: EdgeInsets.zero,
                                               iconSize: 16,
-                                              color: Theme.of(context).colorScheme.onSurface,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
                                               icon: const Icon(Icons.close),
-                                              onPressed: () => setState(() => _localImagePaths.removeAt(i)),
+                                              onPressed: () => setState(
+                                                () => _localImagePaths.removeAt(
+                                                  i,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -949,7 +992,8 @@ class _AddPostPageState extends State<AddPostPage> {
                           ),
                           if (_localImagePaths.isNotEmpty)
                             TextButton(
-                              onPressed: () => setState(() => _localImagePaths.clear()),
+                              onPressed: () =>
+                                  setState(() => _localImagePaths.clear()),
                               child: const Text('Remove all'),
                             ),
                         ],
@@ -960,7 +1004,15 @@ class _AddPostPageState extends State<AddPostPage> {
                         child: PressableScale(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
                             onPressed: _isSubmitting ? null : _submit,
@@ -968,9 +1020,15 @@ class _AddPostPageState extends State<AddPostPage> {
                                 ? const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
-                                : Text(widget.roomToEdit == null ? 'Post' : 'Update'),
+                                : Text(
+                                    widget.roomToEdit == null
+                                        ? 'Post'
+                                        : 'Update',
+                                  ),
                           ),
                         ),
                       ),
