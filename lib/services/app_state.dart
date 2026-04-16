@@ -16,6 +16,7 @@ class AppState {
 
   final ValueNotifier<User?> currentUser = ValueNotifier<User?>(null);
   final ValueNotifier<List<Room>> rooms = ValueNotifier<List<Room>>([]);
+  final ValueNotifier<bool> roomsLoading = ValueNotifier<bool>(true);
   final ValueNotifier<bool> updateAvailable = ValueNotifier<bool>(false);
   final ValueNotifier<bool> forceUpdateRequired = ValueNotifier<bool>(false);
   final ValueNotifier<String?> updateUrl = ValueNotifier<String?>(null);
@@ -74,6 +75,7 @@ class AppState {
 
   void _listenRooms() {
     _roomsSub?.cancel();
+    roomsLoading.value = true;
     _roomsSub = _firestore
         .collection('rooms')
         .orderBy('createdAt', descending: true)
@@ -82,6 +84,9 @@ class AppState {
           rooms.value = snapshot.docs
               .map((doc) => Room.fromMap(doc.data(), id: doc.id))
               .toList();
+          roomsLoading.value = false;
+        }, onError: (_) {
+          roomsLoading.value = false;
         });
   }
 

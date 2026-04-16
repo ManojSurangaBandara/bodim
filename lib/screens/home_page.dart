@@ -345,6 +345,7 @@ class _HomePageState extends State<HomePage> {
                 final towns = _towns;
                 final effectivePriceRange = _effectivePriceRange;
                 final selectedPriceRange = _priceRange ?? effectivePriceRange;
+                final isLoadingRooms = AppState.instance.roomsLoading.value;
 
                 return Column(
                   children: [
@@ -689,7 +690,9 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     Expanded(
-                      child: filtered.isEmpty
+                      child: isLoadingRooms
+                          ? const Center(child: CircularProgressIndicator())
+                          : filtered.isEmpty
                           ? Center(
                               child: Card(
                                 elevation: 4,
