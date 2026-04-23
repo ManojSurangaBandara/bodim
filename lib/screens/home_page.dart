@@ -490,7 +490,7 @@ class _HomePageState extends State<HomePage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -551,7 +551,7 @@ class _HomePageState extends State<HomePage> {
                               curve: Curves.easeInOut,
                               child: _filtersExpanded
                                   ? Padding(
-                                      padding: const EdgeInsets.only(top: 12),
+                                      padding: const EdgeInsets.only(top: 8),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -583,7 +583,7 @@ class _HomePageState extends State<HomePage> {
                                                     contentPadding:
                                                         const EdgeInsets.symmetric(
                                                           horizontal: 12,
-                                                          vertical: 8,
+                                                          vertical: 6,
                                                         ),
                                                   ),
                                                   items:
@@ -641,7 +641,7 @@ class _HomePageState extends State<HomePage> {
                                                     contentPadding:
                                                         const EdgeInsets.symmetric(
                                                           horizontal: 12,
-                                                          vertical: 8,
+                                                          vertical: 6,
                                                         ),
                                                   ),
                                                   items:
@@ -674,7 +674,7 @@ class _HomePageState extends State<HomePage> {
                                           ),
                                           // Price filter (RangeSlider) — visible only when numeric prices exist
                                           if (_priceList.isNotEmpty) ...[
-                                            const SizedBox(height: 12),
+                                            const SizedBox(height: 10),
                                             Text(
                                               'Price Range (රු./month)',
                                               style: Theme.of(context)
@@ -684,7 +684,7 @@ class _HomePageState extends State<HomePage> {
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                             ),
-                                            const SizedBox(height: 6),
+                                            const SizedBox(height: 4),
                                             RangeSlider(
                                               values: selectedPriceRange!,
                                               min: _minPrice.toDouble(),
