@@ -32,6 +32,7 @@ class _HomePageState extends State<HomePage> {
   final int _pageSize = 10;
   int _loadedRoomsCount = 10;
   Timer? _connectivityTimer;
+  final Set<String> _precachedThumbnails = {};
 
   List<Room> _latestRooms = [];
   List<Room> _cachedRooms = [];
@@ -113,6 +114,22 @@ class _HomePageState extends State<HomePage> {
       _loadedRoomsCount = _pageSize;
       _applyFilters();
     });
+  }
+
+  void _precacheRoomThumbnails(List<Room> rooms) {
+    for (var room in rooms) {
+      final firstImage = room.images?.firstWhere(
+        (src) => src.startsWith('http'),
+        orElse: () => '',
+      );
+      if (firstImage == null ||
+          firstImage.isEmpty ||
+          _precachedThumbnails.contains(firstImage)) {
+        continue;
+      }
+      _precachedThumbnails.add(firstImage);
+      precacheImage(NetworkImage(firstImage), context).catchError((_) {});
+    }
   }
 
   int? _parsePrice(String? s) {
@@ -340,6 +357,13 @@ class _HomePageState extends State<HomePage> {
                 _latestRooms = roomList;
                 _updateFilterData(roomList);
 
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  _precacheRoomThumbnails(
+                    _filteredRooms.take(_loadedRoomsCount).toList(),
+                  );
+                });
+
                 final filtered = _filteredRooms;
                 final districts = _districts;
                 final towns = _towns;
@@ -562,16 +586,26 @@ class _HomePageState extends State<HomePage> {
                                                           vertical: 8,
                                                         ),
                                                   ),
-                                                  items: ['All', ...districts]
-                                                      .map(
-                                                        (d) => DropdownMenuItem(
-                                                          value: d == 'All'
-                                                              ? null
-                                                              : d,
-                                                          child: Text(d),
-                                                        ),
-                                                      )
-                                                      .toList(),
+                                                  items:
+                                                      <String>[
+                                                            'All',
+                                                            ...districts,
+                                                          ]
+                                                          .map(
+                                                            (d) =>
+                                                                DropdownMenuItem<
+                                                                  String
+                                                                >(
+                                                                  value:
+                                                                      d == 'All'
+                                                                      ? null
+                                                                      : d,
+                                                                  child: Text(
+                                                                    d,
+                                                                  ),
+                                                                ),
+                                                          )
+                                                          .toList(),
                                                   onChanged: (v) {
                                                     setState(() {
                                                       _selectedDistrict = v;
@@ -610,16 +644,23 @@ class _HomePageState extends State<HomePage> {
                                                           vertical: 8,
                                                         ),
                                                   ),
-                                                  items: ['All', ...towns]
-                                                      .map(
-                                                        (t) => DropdownMenuItem(
-                                                          value: t == 'All'
-                                                              ? null
-                                                              : t,
-                                                          child: Text(t),
-                                                        ),
-                                                      )
-                                                      .toList(),
+                                                  items:
+                                                      <String>['All', ...towns]
+                                                          .map(
+                                                            (t) =>
+                                                                DropdownMenuItem<
+                                                                  String
+                                                                >(
+                                                                  value:
+                                                                      t == 'All'
+                                                                      ? null
+                                                                      : t,
+                                                                  child: Text(
+                                                                    t,
+                                                                  ),
+                                                                ),
+                                                          )
+                                                          .toList(),
                                                   onChanged: (v) {
                                                     setState(() {
                                                       _selectedTown = v;
