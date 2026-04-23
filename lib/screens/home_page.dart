@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   RangeValues? _priceRange;
   bool _isOffline = false;
   bool _showBackOnline = false;
-  bool _filtersExpanded = true;
+  bool _filtersExpanded = false;
   final int _pageSize = 10;
   int _loadedRoomsCount = 10;
   Timer? _connectivityTimer;
