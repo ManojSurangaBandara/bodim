@@ -305,7 +305,7 @@ class _HomePageState extends State<HomePage> {
                     const PopupMenuItem(value: 3, child: Text('Logout')),
                   ],
                   icon: Icon(
-                    Icons.account_circle,
+                    Icons.person,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   shape: RoundedRectangleBorder(
