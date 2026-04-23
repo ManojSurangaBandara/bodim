@@ -20,6 +20,28 @@ class RoomDetailPage extends StatefulWidget {
 class _RoomDetailPageState extends State<RoomDetailPage> {
   int _page = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _precacheImages();
+    });
+  }
+
+  void _precacheImages() {
+    final images = _currentRoom.images ?? widget.room.images ?? [];
+    final futures = images
+        .where((src) => src.startsWith('http'))
+        .map(
+          (src) => precacheImage(NetworkImage(src), context).catchError((_) {}),
+        )
+        .toList();
+    if (futures.isNotEmpty) {
+      Future.wait(futures);
+    }
+  }
+
   Room get _currentRoom {
     final rooms = AppState.instance.rooms.value;
     return rooms.firstWhere(
