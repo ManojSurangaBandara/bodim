@@ -680,6 +680,31 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                               ],
                             ),
 
+                          if (room.category != null && room.category!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Chip(
+                                label: Text(
+                                  room.category!,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                              ),
+                            ),
+
                           // Posted time
                           if (room.createdAt != null)
                             Text(

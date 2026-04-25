@@ -10,6 +10,7 @@ import '../widgets/room_card.dart';
 import '../widgets/pressable_scale.dart';
 import 'login_page.dart';
 import 'add_post_page.dart';
+import 'categories_page.dart';
 import 'my_ads_page.dart';
 import 'pending_ads_page.dart';
 import 'reject_reasons_page.dart';
@@ -25,6 +26,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String? _selectedDistrict;
   String? _selectedTown;
+  String? _selectedCategory;
   RangeValues? _priceRange;
   bool _isOffline = false;
   bool _showBackOnline = false;
@@ -38,6 +40,7 @@ class _HomePageState extends State<HomePage> {
   List<Room> _cachedRooms = [];
   List<String> _districts = [];
   List<String> _towns = [];
+  List<String> _categories = [];
   List<Room> _filteredRooms = [];
   List<int> _priceList = [];
   int _minPrice = 0;
@@ -110,6 +113,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedDistrict = null;
       _selectedTown = null;
+      _selectedCategory = null;
       _priceRange = null;
       _loadedRoomsCount = _pageSize;
       _applyFilters();
@@ -147,6 +151,9 @@ class _HomePageState extends State<HomePage> {
       if (_selectedTown != null && _selectedTown!.isNotEmpty) {
         if (r.town != _selectedTown) return false;
       }
+      if (_selectedCategory != null && _selectedCategory!.isNotEmpty) {
+        if (r.category != _selectedCategory) return false;
+      }
       final selectedRange = _priceRange ?? _effectivePriceRange;
       if (selectedRange != null) {
         final p = _parsePrice(r.price);
@@ -164,6 +171,7 @@ class _HomePageState extends State<HomePage> {
 
     final districts = <String>{};
     final towns = <String>{};
+    _categories = [];
     _priceList = [];
 
     for (var r in _cachedRooms) {
@@ -173,6 +181,9 @@ class _HomePageState extends State<HomePage> {
       if (r.town != null && r.town!.trim().isNotEmpty) {
         towns.add(r.town!);
       }
+      if (r.category != null && r.category!.trim().isNotEmpty) {
+        _categories.add(r.category!.trim());
+      }
       final p = _parsePrice(r.price);
       if (p != null) {
         _priceList.add(p);
@@ -181,6 +192,7 @@ class _HomePageState extends State<HomePage> {
 
     _districts = districts.toList()..sort();
     _towns = towns.toList()..sort();
+    _categories = _categories.toSet().toList()..sort();
 
     if (_priceList.isNotEmpty) {
       _minPrice = _priceList.reduce(min);
@@ -277,6 +289,12 @@ class _HomePageState extends State<HomePage> {
                           builder: (_) => const RejectReasonsPage(),
                         ),
                       );
+                    } else if (v == 6) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const CategoriesPage(),
+                        ),
+                      );
                     }
                   },
                   itemBuilder: (_) => [
@@ -300,6 +318,10 @@ class _HomePageState extends State<HomePage> {
                       const PopupMenuItem(
                         value: 5,
                         child: Text('Reject Reasons'),
+                      ),
+                      const PopupMenuItem(
+                        value: 6,
+                        child: Text('Categories'),
                       ),
                     ],
                     const PopupMenuItem(value: 3, child: Text('Logout')),
@@ -524,7 +546,10 @@ class _HomePageState extends State<HomePage> {
                                       setState(() {
                                         _selectedDistrict = null;
                                         _selectedTown = null;
+                                        _selectedCategory = null;
                                         _priceRange = null;
+                                        _resetLoadedRooms();
+                                        _applyFilters();
                                       });
                                     },
                                   ),
@@ -671,6 +696,48 @@ class _HomePageState extends State<HomePage> {
                                                 ),
                                               ),
                                             ],
+                                          ),
+                                          const SizedBox(height: 10),
+                                          DropdownButtonFormField<String>(
+                                            isExpanded: true,
+                                            value: (_selectedCategory != null &&
+                                                    _categories.contains(
+                                                      _selectedCategory,
+                                                    ))
+                                                ? _selectedCategory
+                                                : null,
+                                            decoration: InputDecoration(
+                                              labelText: 'Category',
+                                              prefixIcon: const Icon(
+                                                Icons.category,
+                                              ),
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                  12,
+                                                ),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 6,
+                                              ),
+                                            ),
+                                            items: <String>['All', ..._categories]
+                                                .map(
+                                                  (c) => DropdownMenuItem<String>(
+                                                    value: c == 'All' ? null : c,
+                                                    child: Text(c),
+                                                  ),
+                                                )
+                                                .toList(),
+                                            onChanged: (v) {
+                                              setState(() {
+                                                _selectedCategory = v;
+                                                _resetLoadedRooms();
+                                                _applyFilters();
+                                              });
+                                            },
                                           ),
                                           // Price filter (RangeSlider) — visible only when numeric prices exist
                                           if (_priceList.isNotEmpty) ...[
@@ -849,7 +916,10 @@ class _HomePageState extends State<HomePage> {
                                   }
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 2),
-                                    child: RoomCard(room: filtered[index]),
+                                    child: RoomCard(
+                                      room: filtered[index],
+                                      hideTitle: true,
+                                    ),
                                   );
                                 },
                               ),

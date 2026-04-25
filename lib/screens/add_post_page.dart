@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -30,6 +31,7 @@ class _AddPostPageState extends State<AddPostPage> {
   bool _isSubmitting = false;
   String? _selectedDistrict;
   String? _selectedTown;
+  String? _selectedCategory;
 
   @override
   void initState() {
@@ -43,6 +45,7 @@ class _AddPostPageState extends State<AddPostPage> {
       _localImagePaths.addAll(room.images ?? []);
       _selectedDistrict = room.district;
       _selectedTown = room.town;
+      _selectedCategory = room.category;
     }
   }
 
@@ -646,7 +649,8 @@ class _AddPostPageState extends State<AddPostPage> {
         p.isEmpty ||
         c.isEmpty ||
         _selectedDistrict == null ||
-        _selectedTown == null) {
+        _selectedTown == null ||
+        _selectedCategory == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
@@ -701,6 +705,7 @@ class _AddPostPageState extends State<AddPostPage> {
       description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
       district: _selectedDistrict,
       town: _selectedTown,
+      category: _selectedCategory,
       status: 'pending',
       id: widget.roomToEdit?.id,
     );
@@ -883,6 +888,52 @@ class _AddPostPageState extends State<AddPostPage> {
                         onChanged: _selectedDistrict == null
                             ? null
                             : (v) => setState(() => _selectedTown = v),
+                      ),
+                      const SizedBox(height: 12),
+                      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: FirebaseFirestore.instance
+                            .collection('categories')
+                            .orderBy('createdAt', descending: false)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          final categories = snapshot.data?.docs
+                                  .map((doc) => doc.data()['name'] as String? ?? '')
+                                  .where((name) => name.isNotEmpty)
+                                  .toList() ??
+                              [];
+                          if (_selectedCategory != null &&
+                              !_selectedCategory!.isEmpty &&
+                              !categories.contains(_selectedCategory)) {
+                            categories.insert(0, _selectedCategory!);
+                          }
+
+                          return DropdownButtonFormField<String>(
+                            value: categories.contains(_selectedCategory)
+                                ? _selectedCategory
+                                : null,
+                            decoration: const InputDecoration(
+                              labelText: 'Category',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: categories
+                                .map(
+                                  (category) => DropdownMenuItem(
+                                    value: category,
+                                    child: Text(category),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: categories.isEmpty
+                                ? null
+                                : (v) => setState(() => _selectedCategory = v),
+                            hint: Text(snapshot.connectionState ==
+                                    ConnectionState.waiting
+                                ? 'Loading categories…'
+                                : categories.isEmpty
+                                    ? 'No categories available'
+                                    : 'Select category'),
+                          );
+                        },
                       ),
                       const SizedBox(height: 12),
                       if (_localImagePaths.isNotEmpty)

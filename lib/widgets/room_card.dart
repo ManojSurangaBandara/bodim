@@ -7,11 +7,13 @@ import '../screens/room_detail_page.dart';
 class RoomCard extends StatelessWidget {
   final Room room;
   final bool hideDetailsOnPendingRejected;
+  final bool hideTitle;
 
   const RoomCard({
     super.key,
     required this.room,
     this.hideDetailsOnPendingRejected = false,
+    this.hideTitle = false,
   });
 
   String _timeAgo(DateTime dateTime) {
@@ -82,12 +84,31 @@ class RoomCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        room.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      if (!hideTitle)
+                        Text(
+                          room.title,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      if (room.category != null && room.category!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              room.category!,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                        ),
                       if (room.status != 'approved')
                         Padding(
                           padding: const EdgeInsets.only(top: 6.0),
