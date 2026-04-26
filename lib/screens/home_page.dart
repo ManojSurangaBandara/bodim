@@ -55,12 +55,56 @@ class _HomePageState extends State<HomePage> {
       const Duration(seconds: 8),
       (_) => _checkConnectivity(),
     );
+    AppState.instance.rooms.addListener(_onRoomsChanged);
+    // Process rooms already available (e.g. after navigation or hot reload)
+    final initialRooms = AppState.instance.rooms.value.cast<Room>();
+    if (initialRooms.isNotEmpty) {
+      _latestRooms = initialRooms;
+      _updateFilterData(initialRooms);
+    }
   }
 
   @override
   void dispose() {
     _connectivityTimer?.cancel();
+    AppState.instance.rooms.removeListener(_onRoomsChanged);
     super.dispose();
+  }
+
+  void _onRoomsChanged() {
+    if (!mounted) return;
+    final roomList = AppState.instance.rooms.value.cast<Room>();
+
+    final oldRoomsById = {
+      for (var room in _latestRooms)
+        if (room.id != null) room.id!: room,
+    };
+    final becameApproved = roomList.any((newRoom) {
+      if (newRoom.id == null) return false;
+      final oldRoom = oldRoomsById[newRoom.id];
+      return oldRoom != null &&
+          (oldRoom.status == 'paused' || oldRoom.status == 'pending') &&
+          newRoom.status == 'approved';
+    });
+
+    setState(() {
+      _latestRooms = roomList;
+      if (becameApproved) {
+        _selectedDistrict = null;
+        _selectedTown = null;
+        _selectedCategory = null;
+        _priceRange = null;
+        _loadedRoomsCount = _pageSize;
+      }
+      _updateFilterData(roomList);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _precacheRoomThumbnails(
+        _filteredRooms.take(_loadedRoomsCount).toList(),
+      );
+    });
   }
 
   Future<void> _checkConnectivity() async {
@@ -154,7 +198,7 @@ class _HomePageState extends State<HomePage> {
       if (_selectedCategory != null && _selectedCategory!.isNotEmpty) {
         if (r.category != _selectedCategory) return false;
       }
-      final selectedRange = _priceRange ?? _effectivePriceRange;
+      final selectedRange = _priceRange;
       if (selectedRange != null) {
         final p = _parsePrice(r.price);
         if (p == null) return false;
@@ -355,42 +399,8 @@ class _HomePageState extends State<HomePage> {
             ValueListenableBuilder<List>(
               valueListenable: app.rooms,
               builder: (context, rooms, child) {
-                final roomList = rooms.cast<Room>();
-                final oldRoomsById = {
-                  for (var room in _latestRooms)
-                    if (room.id != null) room.id!: room,
-                };
-                final becameApproved = roomList.any((newRoom) {
-                  if (newRoom.id == null) return false;
-                  final oldRoom = oldRoomsById[newRoom.id];
-                  return oldRoom != null &&
-                      (oldRoom.status == 'paused' ||
-                          oldRoom.status == 'pending') &&
-                      newRoom.status == 'approved';
-                });
-
-                if (becameApproved) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    _resetAllFilters();
-                  });
-                }
-
-                _latestRooms = roomList;
-                _updateFilterData(roomList);
-
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  _precacheRoomThumbnails(
-                    _filteredRooms.take(_loadedRoomsCount).toList(),
-                  );
-                });
-
                 final filtered = _filteredRooms;
-                final districts = _districts;
-                final towns = _towns;
-                final effectivePriceRange = _effectivePriceRange;
-                final selectedPriceRange = _priceRange ?? effectivePriceRange;
+                final selectedPriceRange = _priceRange ?? _effectivePriceRange;
                 final isLoadingRooms = AppState.instance.roomsLoading.value;
 
                 return Column(
@@ -440,6 +450,7 @@ class _HomePageState extends State<HomePage> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.orange.shade600,
                                       foregroundColor: Colors.white,
+                                      minimumSize: const Size(80, 40),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
@@ -589,7 +600,7 @@ class _HomePageState extends State<HomePage> {
                                                   value:
                                                       (_selectedDistrict !=
                                                               null &&
-                                                          districts.contains(
+                                                          _districts.contains(
                                                             _selectedDistrict,
                                                           ))
                                                       ? _selectedDistrict
@@ -614,7 +625,7 @@ class _HomePageState extends State<HomePage> {
                                                   items:
                                                       <String>[
                                                             'All',
-                                                            ...districts,
+                                                            ..._districts,
                                                           ]
                                                           .map(
                                                             (d) =>
@@ -647,7 +658,7 @@ class _HomePageState extends State<HomePage> {
                                                   isExpanded: true,
                                                   value:
                                                       (_selectedTown != null &&
-                                                          towns.contains(
+                                                          _towns.contains(
                                                             _selectedTown,
                                                           ))
                                                       ? _selectedTown
@@ -670,7 +681,7 @@ class _HomePageState extends State<HomePage> {
                                                         ),
                                                   ),
                                                   items:
-                                                      <String>['All', ...towns]
+                                                      <String>['All', ..._towns]
                                                           .map(
                                                             (t) =>
                                                                 DropdownMenuItem<
@@ -926,75 +937,6 @@ class _HomePageState extends State<HomePage> {
                             ),
                     ),
                   ],
-                );
-              },
-            ),
-
-            ValueListenableBuilder<bool>(
-              valueListenable: AppState.instance.forceUpdateRequired,
-              builder: (context, forceUpdate, _) {
-                if (!forceUpdate) return const SizedBox.shrink();
-                return Positioned.fill(
-                  child: AbsorbPointer(
-                    absorbing: true,
-                    child: Container(
-                      color: Colors.white.withOpacity(0.95),
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.all(24),
-                      child: Card(
-                        elevation: 8,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.system_update,
-                                size: 48,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Update Required',
-                                style: Theme.of(context).textTheme.headlineSmall
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'A mandatory update is available. You must update the app before continuing.',
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 20),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  final url = AppState.instance.updateUrl.value;
-                                  if (url != null) {
-                                    await launchUrl(
-                                      Uri.parse(url),
-                                      mode: LaunchMode.externalApplication,
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: const Text('Update Now'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 );
               },
             ),
