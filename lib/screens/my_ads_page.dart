@@ -82,6 +82,7 @@ class MyAdsPage extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: RoomCard(
                     room: room,
+                    hideTitle: true,
                     hideDetailsOnPendingRejected: room.status != 'approved',
                   ),
                 );

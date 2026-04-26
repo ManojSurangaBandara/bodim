@@ -65,7 +65,7 @@ class RoomCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => RoomDetailPage(room: room))),
         child: SizedBox(
-          height: 100,
+          height: 105,
           child: Row(
             children: [
               AspectRatio(
@@ -151,10 +151,25 @@ class RoomCard extends StatelessWidget {
                         const Spacer(),
                         Row(
                           children: [
-                            Text('රු. ${room.price}', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)),
-                            const SizedBox(width: 8),
-                            if (room.createdAt != null)
-                              Text(_timeAgo(room.createdAt!), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'රු. ${room.price}',
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                                if (room.createdAt != null)
+                                  Text(
+                                    _timeAgo(room.createdAt!),
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
                       ],
