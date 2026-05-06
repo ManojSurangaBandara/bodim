@@ -24,6 +24,8 @@ class Room extends HiveObject {
   @HiveField(5)
   final String? creatorEmail;
 
+  final String? userId;
+
   @HiveField(6)
   final DateTime? createdAt;
 
@@ -51,6 +53,7 @@ class Room extends HiveObject {
     this.description,
     this.contact,
     this.creatorEmail,
+    this.userId,
     this.createdAt,
     this.district,
     this.town,
@@ -78,6 +81,7 @@ class Room extends HiveObject {
       description: map['description'] as String?,
       contact: map['contact'] as String?,
       creatorEmail: map['creatorEmail'] as String?,
+      userId: map['userId'] as String?,
       createdAt: createdAt,
       district: map['district'] as String?,
       town: map['town'] as String?,
@@ -101,6 +105,7 @@ class Room extends HiveObject {
       'district': district,
       'town': town,
       'category': category,
+      'userId': userId,
       'status': status,
       'rejectionReason': rejectionReason,
     };

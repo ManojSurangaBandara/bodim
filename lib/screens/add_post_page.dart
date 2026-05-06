@@ -699,7 +699,8 @@ class _AddPostPageState extends State<AddPostPage> {
       title: t,
       price: p,
       contact: c,
-      creatorEmail: currentUser.email,
+      creatorEmail: AppState.instance.currentUserEmail,
+      userId: AppState.instance.currentUserId,
       createdAt: widget.roomToEdit?.createdAt ?? DateTime.now(),
       images: imageUrls.isNotEmpty ? imageUrls : null,
       description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
@@ -718,10 +719,13 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() => _isSubmitting = false);
 
     if (!success) {
+      final error = AppState.instance.lastRoomError;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Unable to save the ad. Please check your internet connection and try again.',
+            error == null || error.isEmpty
+                ? 'Unable to save the ad. Please check your internet connection and try again.'
+                : 'Unable to save the ad: $error',
           ),
         ),
       );
@@ -896,8 +900,12 @@ class _AddPostPageState extends State<AddPostPage> {
                             .orderBy('createdAt', descending: false)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          final categories = snapshot.data?.docs
-                                  .map((doc) => doc.data()['name'] as String? ?? '')
+                          final categories =
+                              snapshot.data?.docs
+                                  .map(
+                                    (doc) =>
+                                        doc.data()['name'] as String? ?? '',
+                                  )
                                   .where((name) => name.isNotEmpty)
                                   .toList() ??
                               [];
@@ -926,12 +934,14 @@ class _AddPostPageState extends State<AddPostPage> {
                             onChanged: categories.isEmpty
                                 ? null
                                 : (v) => setState(() => _selectedCategory = v),
-                            hint: Text(snapshot.connectionState ==
-                                    ConnectionState.waiting
-                                ? 'Loading categories…'
-                                : categories.isEmpty
-                                    ? 'No categories available'
-                                    : 'Select category'),
+                            hint: Text(
+                              snapshot.connectionState ==
+                                      ConnectionState.waiting
+                                  ? 'Loading categories…'
+                                  : categories.isEmpty
+                                  ? 'No categories available'
+                                  : 'Select category',
+                            ),
                           );
                         },
                       ),

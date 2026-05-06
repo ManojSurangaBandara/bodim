@@ -101,9 +101,7 @@ class _HomePageState extends State<HomePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _precacheRoomThumbnails(
-        _filteredRooms.take(_loadedRoomsCount).toList(),
-      );
+      _precacheRoomThumbnails(_filteredRooms.take(_loadedRoomsCount).toList());
     });
   }
 
@@ -351,7 +349,7 @@ class _HomePageState extends State<HomePage> {
                             color: Theme.of(context).colorScheme.primary,
                           ),
                           const SizedBox(width: 8),
-                          Text(user.email),
+                          Text(user.email.isNotEmpty ? user.email : ''),
                         ],
                       ),
                     ),
@@ -363,10 +361,7 @@ class _HomePageState extends State<HomePage> {
                         value: 5,
                         child: Text('Reject Reasons'),
                       ),
-                      const PopupMenuItem(
-                        value: 6,
-                        child: Text('Categories'),
-                      ),
+                      const PopupMenuItem(value: 6, child: Text('Categories')),
                     ],
                     const PopupMenuItem(value: 3, child: Text('Logout')),
                   ],
@@ -711,7 +706,8 @@ class _HomePageState extends State<HomePage> {
                                           const SizedBox(height: 10),
                                           DropdownButtonFormField<String>(
                                             isExpanded: true,
-                                            value: (_selectedCategory != null &&
+                                            value:
+                                                (_selectedCategory != null &&
                                                     _categories.contains(
                                                       _selectedCategory,
                                                     ))
@@ -724,24 +720,28 @@ class _HomePageState extends State<HomePage> {
                                               ),
                                               border: OutlineInputBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(
-                                                  12,
-                                                ),
+                                                    BorderRadius.circular(12),
                                               ),
                                               contentPadding:
                                                   const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 6,
-                                              ),
-                                            ),
-                                            items: <String>['All', ..._categories]
-                                                .map(
-                                                  (c) => DropdownMenuItem<String>(
-                                                    value: c == 'All' ? null : c,
-                                                    child: Text(c),
+                                                    horizontal: 12,
+                                                    vertical: 6,
                                                   ),
-                                                )
-                                                .toList(),
+                                            ),
+                                            items:
+                                                <String>['All', ..._categories]
+                                                    .map(
+                                                      (c) =>
+                                                          DropdownMenuItem<
+                                                            String
+                                                          >(
+                                                            value: c == 'All'
+                                                                ? null
+                                                                : c,
+                                                            child: Text(c),
+                                                          ),
+                                                    )
+                                                    .toList(),
                                             onChanged: (v) {
                                               setState(() {
                                                 _selectedCategory = v;
@@ -1013,53 +1013,64 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
 
-      floatingActionButton: ValueListenableBuilder(
-        valueListenable: app.currentUser,
-        builder: (context, user, child) {
-          if (user == null) return const SizedBox.shrink();
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.secondary,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: PressableScale(
+          child: FloatingActionButton.extended(
+            onPressed: () async {
+              if (AppState.instance.currentUser.value == null) {
+                final signed = await AppState.instance.signInAnonymously();
+                if (!signed) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Unable to start anonymous session. Please try again.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+              }
+              if (!mounted) return;
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AddPostPage()));
+            },
+            tooltip: 'Add New Room Listing',
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'Add Bodim',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                  spreadRadius: 2,
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
-            child: PressableScale(
-              child: FloatingActionButton.extended(
-                onPressed: () => Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const AddPostPage())),
-                tooltip: 'Add New Room Listing',
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text(
-                  'Add Bodim',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

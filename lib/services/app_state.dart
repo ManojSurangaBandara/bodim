@@ -36,6 +36,12 @@ class AppState {
     _authSub = _auth.authStateChanges().listen(_handleAuthStateChanged);
     _listenRooms();
     _listenUpdateConfig();
+    await _ensureSignedIn();
+  }
+
+  Future<void> _ensureSignedIn() async {
+    if (_auth.currentUser != null) return;
+    await signInAnonymously();
   }
 
   void _handleAuthStateChanged(fb_auth.User? authUser) {
@@ -45,21 +51,23 @@ class AppState {
       return;
     }
 
+    final emailValue = authUser.email ?? '';
     final profileDoc = _firestore.collection('users').doc(authUser.uid);
     _profileSub = profileDoc.snapshots().listen(
       (snapshot) {
         final data = snapshot.data();
         if (data != null) {
           currentUser.value = User(
-            authUser.email ?? '',
+            emailValue,
             name: data['name'] as String?,
             phone: data['phone'] as String?,
             isAdmin: data['isAdmin'] as bool? ?? false,
           );
         } else {
-          final user = User(authUser.email ?? '');
+          final user = User(emailValue);
           currentUser.value = user;
           profileDoc.set({
+            'id': authUser.uid,
             'email': authUser.email,
             'name': null,
             'phone': null,
@@ -68,7 +76,7 @@ class AppState {
         }
       },
       onError: (_) {
-        currentUser.value = User(authUser.email ?? '');
+        currentUser.value = User(emailValue);
       },
     );
   }
@@ -80,14 +88,17 @@ class AppState {
         .collection('rooms')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .listen((snapshot) {
-          rooms.value = snapshot.docs
-              .map((doc) => Room.fromMap(doc.data(), id: doc.id))
-              .toList();
-          roomsLoading.value = false;
-        }, onError: (_) {
-          roomsLoading.value = false;
-        });
+        .listen(
+          (snapshot) {
+            rooms.value = snapshot.docs
+                .map((doc) => Room.fromMap(doc.data(), id: doc.id))
+                .toList();
+            roomsLoading.value = false;
+          },
+          onError: (_) {
+            roomsLoading.value = false;
+          },
+        );
   }
 
   Future<void> _initPackageInfo() async {
@@ -187,6 +198,7 @@ class AppState {
       final uid = result.user?.uid;
       if (uid != null) {
         await _firestore.collection('users').doc(uid).set({
+          'id': uid,
           'email': email,
           'name': name,
           'phone': phone,
@@ -198,36 +210,63 @@ class AppState {
     }
   }
 
+  String? get currentUserId => _auth.currentUser?.uid;
+  String? get currentUserEmail => _auth.currentUser?.email;
+
+  Future<bool> signInAnonymously() async {
+    try {
+      final result = await _auth.signInAnonymously();
+      return result.user != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _auth.signOut();
   }
 
+  String? lastRoomError;
+
   Future<bool> addRoom(Room room) async {
-    final user = currentUser.value;
-    if (user == null) {
+    final authUser = _auth.currentUser;
+    if (authUser == null) {
       throw StateError('User must be signed in to add a room');
     }
+    final roomData = Map<String, dynamic>.from(room.toMap());
+    roomData['creatorEmail'] = authUser.email;
+    roomData['userId'] = authUser.uid;
+    lastRoomError = null;
+
     try {
       await _firestore
           .collection('rooms')
-          .add(room.toMap())
+          .add(roomData)
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () => throw TimeoutException('Add room timed out'),
           );
       return true;
     } catch (e, st) {
+      lastRoomError = e.toString();
       debugPrint('Failed to add room: $e\n$st');
       return false;
     }
   }
 
   Future<bool> deleteRoom(Room room) async {
-    final user = currentUser.value;
-    if (user == null || room.creatorEmail != user.email || room.id == null) {
+    final authUser = _auth.currentUser;
+    if (authUser == null || room.id == null) {
       return false;
     }
+    final userId = authUser.uid;
+    final userEmail = authUser.email;
+    final canDelete = room.userId != null
+        ? room.userId == userId
+        : room.creatorEmail == userEmail;
+    if (!canDelete) return false;
     try {
+      lastRoomError = null;
       if (room.images != null) {
         for (final imageUrl in room.images!) {
           if (!imageUrl.startsWith('http')) continue;
@@ -253,19 +292,26 @@ class AppState {
           );
       return true;
     } catch (e, st) {
+      lastRoomError = e.toString();
       debugPrint('Failed to delete room: $e\n$st');
       return false;
     }
   }
 
   Future<bool> updateRoom(Room oldRoom, Room newRoom) async {
-    final user = currentUser.value;
-    if (user == null ||
-        oldRoom.creatorEmail != user.email ||
-        oldRoom.id == null) {
+    final authUser = _auth.currentUser;
+    if (authUser == null || oldRoom.id == null) {
       return false;
     }
+    final userId = authUser.uid;
+    final userEmail = authUser.email;
+    final canUpdate = oldRoom.userId != null
+        ? oldRoom.userId == userId
+        : oldRoom.creatorEmail == userEmail;
+    if (!canUpdate) return false;
+
     try {
+      lastRoomError = null;
       await _firestore
           .collection('rooms')
           .doc(oldRoom.id!)
@@ -276,6 +322,7 @@ class AppState {
           );
       return true;
     } catch (e, st) {
+      lastRoomError = e.toString();
       debugPrint('Failed to update room: $e\n$st');
       return false;
     }

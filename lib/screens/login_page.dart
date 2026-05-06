@@ -17,7 +17,10 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _login() async {
     setState(() => _loading = true);
-    final ok = await AppState.instance.login(_emailCtl.text.trim(), _passCtl.text);
+    final ok = await AppState.instance.login(
+      _emailCtl.text.trim(),
+      _passCtl.text,
+    );
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
@@ -25,6 +28,22 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid credentials or not registered')),
+      );
+    }
+  }
+
+  Future<void> _loginAnonymously() async {
+    setState(() => _loading = true);
+    final ok = await AppState.instance.signInAnonymously();
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (ok) {
+      Navigator.of(context).pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to sign in anonymously. Please try again.'),
+        ),
       );
     }
   }
@@ -64,10 +83,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 8),
                     const Text(
                       'Welcome Back',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
                     ),
                     const SizedBox(height: 32),
                     TextFormField(
@@ -106,17 +122,35 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           child: _loading
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Text('Login', style: TextStyle(fontSize: 16)),
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Login',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegisterPage()));
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterPage(),
+                          ),
+                        );
                       },
                       child: const Text('Don\'t have an account? Register'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _loading ? null : _loginAnonymously,
+                      child: const Text('Continue anonymously'),
                     ),
                   ],
                 ),
