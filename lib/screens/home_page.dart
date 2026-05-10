@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/app_state.dart';
 import '../models/room.dart';
@@ -35,11 +36,12 @@ class _HomePageState extends State<HomePage> {
   int _loadedRoomsCount = 10;
   Timer? _connectivityTimer;
   final Set<String> _precachedThumbnails = {};
+  final TextEditingController _minPriceController = TextEditingController();
+  final TextEditingController _maxPriceController = TextEditingController();
 
   List<Room> _latestRooms = [];
   List<Room> _cachedRooms = [];
   List<String> _districts = [];
-  List<String> _towns = [];
   List<String> _categories = [];
   List<Room> _filteredRooms = [];
   List<int> _priceList = [];
@@ -68,6 +70,8 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _connectivityTimer?.cancel();
     AppState.instance.rooms.removeListener(_onRoomsChanged);
+    _minPriceController.dispose();
+    _maxPriceController.dispose();
     super.dispose();
   }
 
@@ -151,17 +155,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _resetAllFilters() {
-    setState(() {
-      _selectedDistrict = null;
-      _selectedTown = null;
-      _selectedCategory = null;
-      _priceRange = null;
-      _loadedRoomsCount = _pageSize;
-      _applyFilters();
-    });
-  }
-
   void _precacheRoomThumbnails(List<Room> rooms) {
     for (var room in rooms) {
       final firstImage = room.images?.firstWhere(
@@ -183,6 +176,45 @@ class _HomePageState extends State<HomePage> {
     final digits = s.replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isEmpty) return null;
     return int.tryParse(digits);
+  }
+
+  void _updatePriceControllers() {
+    final selectedRange = _priceRange ?? _effectivePriceRange;
+    if (selectedRange != null) {
+      _minPriceController.text = selectedRange.start.round().toString();
+      _maxPriceController.text = selectedRange.end.round().toString();
+    } else {
+      _minPriceController.clear();
+      _maxPriceController.clear();
+    }
+  }
+
+  void _updatePriceFilterFromInputs() {
+    final minText = _minPriceController.text.trim();
+    final maxText = _maxPriceController.text.trim();
+    final minValue = int.tryParse(minText);
+    final maxValue = int.tryParse(maxText);
+    if (minText.isEmpty && maxText.isEmpty) {
+      setState(() {
+        _priceRange = null;
+        _resetLoadedRooms();
+        _applyFilters();
+      });
+      return;
+    }
+
+    final effectiveMin = minValue ?? _minPrice;
+    final effectiveMax = maxValue ?? _maxPrice;
+    final clampedMin = effectiveMin.clamp(_minPrice, _maxPrice);
+    final clampedMax = effectiveMax.clamp(_minPrice, _maxPrice);
+    setState(() {
+      _priceRange = RangeValues(
+        min(clampedMin, clampedMax).toDouble(),
+        max(clampedMin, clampedMax).toDouble(),
+      );
+      _resetLoadedRooms();
+      _applyFilters();
+    });
   }
 
   List<String> get _availableTowns {
@@ -249,7 +281,6 @@ class _HomePageState extends State<HomePage> {
     }
 
     _districts = districts.toList()..sort();
-    _towns = towns.toList()..sort();
     _categories = _categories.toSet().toList()..sort();
 
     if (_priceList.isNotEmpty) {
@@ -273,6 +304,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     _applyFilters();
+    _updatePriceControllers();
   }
 
   @override
@@ -411,7 +443,6 @@ class _HomePageState extends State<HomePage> {
               valueListenable: app.rooms,
               builder: (context, rooms, child) {
                 final filtered = _filteredRooms;
-                final selectedPriceRange = _priceRange ?? _effectivePriceRange;
                 final isLoadingRooms = AppState.instance.roomsLoading.value;
 
                 return Column(
@@ -781,39 +812,74 @@ class _HomePageState extends State<HomePage> {
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                             ),
-                                            const SizedBox(height: 4),
-                                            RangeSlider(
-                                              values: selectedPriceRange!,
-                                              min: _minPrice.toDouble(),
-                                              max: _maxPrice.toDouble(),
-                                              labels: RangeLabels(
-                                                'රු. ${selectedPriceRange.start.round()}',
-                                                'රු. ${selectedPriceRange.end.round()}',
-                                              ),
-                                              onChanged: (v) {
-                                                setState(() {
-                                                  _priceRange = v;
-                                                  _resetLoadedRooms();
-                                                  _applyFilters();
-                                                });
-                                              },
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: TextFormField(
+                                                    controller: _minPriceController,
+                                                    keyboardType: TextInputType.number,
+                                                    inputFormatters: [
+                                                      FilteringTextInputFormatter.digitsOnly,
+                                                    ],
+                                                    decoration: InputDecoration(
+                                                      labelText: 'Min price',
+                                                      prefixText: 'රු. ',
+                                                      border: OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(12),
+                                                      ),
+                                                      contentPadding:
+                                                          const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 6,
+                                                      ),
+                                                    ),
+                                                    onChanged: (_) => _updatePriceFilterFromInputs(),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: TextFormField(
+                                                    controller: _maxPriceController,
+                                                    keyboardType: TextInputType.number,
+                                                    inputFormatters: [
+                                                      FilteringTextInputFormatter.digitsOnly,
+                                                    ],
+                                                    decoration: InputDecoration(
+                                                      labelText: 'Max price',
+                                                      prefixText: 'රු. ',
+                                                      border: OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(12),
+                                                      ),
+                                                      contentPadding:
+                                                          const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 6,
+                                                      ),
+                                                    ),
+                                                    onChanged: (_) => _updatePriceFilterFromInputs(),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
+                                            const SizedBox(height: 6),
                                             Row(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                                  MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Text(
-                                                  'Min: රු. ${selectedPriceRange!.start.round()}',
-                                                  style: Theme.of(
-                                                    context,
-                                                  ).textTheme.bodySmall,
+                                                  'Available: රු. $_minPrice - රු. $_maxPrice',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall,
                                                 ),
                                                 Text(
-                                                  'Max: රු. ${selectedPriceRange!.end.round()}',
-                                                  style: Theme.of(
-                                                    context,
-                                                  ).textTheme.bodySmall,
+                                                  'Leave blank to reset',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall,
                                                 ),
                                               ],
                                             ),
