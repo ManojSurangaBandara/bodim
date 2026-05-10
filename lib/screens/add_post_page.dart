@@ -1098,6 +1098,33 @@ class _AddPostPageState extends State<AddPostPage> {
                           ),
                         ),
                       ),
+                      if (widget.roomToEdit == null &&
+                          AppState.instance.isAnonymous)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14.0),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Text(
+                              'If you register before posting, you can edit, delete, pause, and keep track of your ads from My Ads.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface,
+                                  ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
