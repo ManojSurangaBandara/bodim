@@ -63,7 +63,13 @@ class RoomCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.hardEdge,
       child: InkWell(
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => RoomDetailPage(room: room))),
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+          FocusScope.of(context).requestFocus(FocusNode());
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => RoomDetailPage(room: room)));
+          });
+        },
         child: SizedBox(
           height: 105,
           child: Row(

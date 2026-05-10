@@ -179,10 +179,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _updatePriceControllers() {
-    final selectedRange = _priceRange ?? _effectivePriceRange;
-    if (selectedRange != null) {
-      _minPriceController.text = selectedRange.start.round().toString();
-      _maxPriceController.text = selectedRange.end.round().toString();
+    if (_priceRange != null) {
+      _minPriceController.text = _priceRange!.start.round().toString();
+      _maxPriceController.text = _priceRange!.end.round().toString();
     } else {
       _minPriceController.clear();
       _maxPriceController.clear();
@@ -603,6 +602,7 @@ class _HomePageState extends State<HomePage> {
                                         _priceRange = null;
                                         _resetLoadedRooms();
                                         _applyFilters();
+                                        _updatePriceControllers();
                                       });
                                     },
                                   ),
