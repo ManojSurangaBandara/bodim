@@ -692,12 +692,17 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                       ?.copyWith(
                                         color: Theme.of(context)
                                             .colorScheme
-                                            .onPrimary,
+                                            .primary,
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.primary,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 14,
                                   vertical: 10,
