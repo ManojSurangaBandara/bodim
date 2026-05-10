@@ -657,6 +657,21 @@ class _AddPostPageState extends State<AddPostPage> {
       return;
     }
 
+    final isValidContact =
+        c.length == 10 &&
+        c.startsWith('0') &&
+        c.codeUnits.every((unit) => unit >= 48 && unit <= 57);
+    if (!isValidContact) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Contact number must start with 0 and contain exactly 10 digits.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final currentUser = AppState.instance.currentUser.value;
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1136,3 +1151,4 @@ class _AddPostPageState extends State<AddPostPage> {
     );
   }
 }
+
