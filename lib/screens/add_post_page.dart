@@ -752,7 +752,7 @@ class _AddPostPageState extends State<AddPostPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.roomToEdit == null ? 'Add Bodim' : 'Edit Bodim'),
+        title: Text(widget.roomToEdit == null ? 'Create Ad' : 'Edit Ad'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 0,

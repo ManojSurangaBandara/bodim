@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/app_state.dart';
+import '../screens/add_post_page.dart';
 import '../widgets/room_card.dart';
 
 class MyAdsPage extends StatelessWidget {
@@ -31,6 +32,15 @@ class MyAdsPage extends StatelessWidget {
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AddPostPage()),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Create Ad'),
       ),
       body: Container(
         decoration: const BoxDecoration(
