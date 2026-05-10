@@ -339,7 +339,7 @@ class _HomePageState extends State<HomePage> {
           ValueListenableBuilder(
             valueListenable: app.currentUser,
             builder: (context, user, child) {
-              if (user == null) {
+              if (user == null || app.isAnonymous) {
                 return TextButton.icon(
                   onPressed: () => Navigator.of(
                     context,

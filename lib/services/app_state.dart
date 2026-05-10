@@ -212,6 +212,7 @@ class AppState {
 
   String? get currentUserId => _auth.currentUser?.uid;
   String? get currentUserEmail => _auth.currentUser?.email;
+  bool get isAnonymous => _auth.currentUser?.isAnonymous ?? false;
 
   Future<bool> signInAnonymously() async {
     try {
