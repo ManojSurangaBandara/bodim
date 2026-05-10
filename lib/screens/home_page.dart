@@ -8,7 +8,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/app_state.dart';
 import '../models/room.dart';
 import '../widgets/room_card.dart';
-import '../widgets/pressable_scale.dart';
 import 'login_page.dart';
 import 'add_post_page.dart';
 import 'categories_page.dart';
@@ -335,6 +334,37 @@ class _HomePageState extends State<HomePage> {
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         actions: [
+          TextButton.icon(
+            onPressed: () async {
+              if (AppState.instance.currentUser.value == null) {
+                final signed = await AppState.instance.signInAnonymously();
+                if (!signed) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Unable to start anonymous session. Please try again.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+              }
+              if (!mounted) return;
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AddPostPage()),
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Create Ad'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+            ),
+          ),
           ValueListenableBuilder(
             valueListenable: app.currentUser,
             builder: (context, user, child) {
@@ -1076,66 +1106,6 @@ class _HomePageState extends State<HomePage> {
               },
             ),
           ],
-        ),
-      ),
-
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-              spreadRadius: 2,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: PressableScale(
-          child: FloatingActionButton.extended(
-            onPressed: () async {
-              if (AppState.instance.currentUser.value == null) {
-                final signed = await AppState.instance.signInAnonymously();
-                if (!signed) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Unable to start anonymous session. Please try again.',
-                      ),
-                    ),
-                  );
-                  return;
-                }
-              }
-              if (!mounted) return;
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const AddPostPage()));
-            },
-            tooltip: 'Add New Room Listing',
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              'Create Ad',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
         ),
       ),
     );

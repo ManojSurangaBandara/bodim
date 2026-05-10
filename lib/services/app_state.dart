@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/room.dart';
@@ -52,6 +51,11 @@ class AppState {
     }
 
     final emailValue = authUser.email ?? '';
+    if (authUser.isAnonymous) {
+      currentUser.value = User(emailValue);
+      return;
+    }
+
     final profileDoc = _firestore.collection('users').doc(authUser.uid);
     _profileSub = profileDoc.snapshots().listen(
       (snapshot) {
