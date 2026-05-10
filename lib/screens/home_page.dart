@@ -185,6 +185,22 @@ class _HomePageState extends State<HomePage> {
     return int.tryParse(digits);
   }
 
+  List<String> get _availableTowns {
+    if (_selectedDistrict == null || _selectedDistrict!.isEmpty) {
+      return [];
+    }
+
+    final towns = <String>{};
+    for (var r in _cachedRooms) {
+      if (r.district == _selectedDistrict &&
+          r.town != null &&
+          r.town!.trim().isNotEmpty) {
+        towns.add(r.town!.trim());
+      }
+    }
+    return towns.toList()..sort();
+  }
+
   void _applyFilters() {
     _filteredRooms = _cachedRooms.where((r) {
       if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) {
@@ -653,7 +669,7 @@ class _HomePageState extends State<HomePage> {
                                                   isExpanded: true,
                                                   value:
                                                       (_selectedTown != null &&
-                                                          _towns.contains(
+                                                          _availableTowns.contains(
                                                             _selectedTown,
                                                           ))
                                                       ? _selectedTown
@@ -675,8 +691,9 @@ class _HomePageState extends State<HomePage> {
                                                           vertical: 6,
                                                         ),
                                                   ),
+                                                  disabledHint: const Text('Select district first'),
                                                   items:
-                                                      <String>['All', ..._towns]
+                                                      <String>['All', ..._availableTowns]
                                                           .map(
                                                             (t) =>
                                                                 DropdownMenuItem<
@@ -692,13 +709,15 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                           )
                                                           .toList(),
-                                                  onChanged: (v) {
-                                                    setState(() {
-                                                      _selectedTown = v;
-                                                      _resetLoadedRooms();
-                                                      _applyFilters();
-                                                    });
-                                                  },
+                                                  onChanged: _selectedDistrict == null
+                                                      ? null
+                                                      : (v) {
+                                                          setState(() {
+                                                            _selectedTown = v;
+                                                            _resetLoadedRooms();
+                                                            _applyFilters();
+                                                          });
+                                                        },
                                                 ),
                                               ),
                                             ],
