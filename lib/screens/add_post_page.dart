@@ -853,7 +853,7 @@ class _AddPostPageState extends State<AddPostPage> {
                       TextField(
                         controller: _priceCtl,
                         decoration: const InputDecoration(
-                          labelText: 'Price (LKR)',
+                          labelText: 'Price (රු.)',
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.number,
