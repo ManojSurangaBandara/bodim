@@ -71,7 +71,7 @@ class RoomCard extends StatelessWidget {
           });
         },
         child: SizedBox(
-          height: 105,
+          height: 120,
           child: Row(
             children: [
               AspectRatio(

@@ -31,7 +31,6 @@ class _HomePageState extends State<HomePage> {
   RangeValues? _priceRange;
   bool _isOffline = false;
   bool _showBackOnline = false;
-  bool _filtersExpanded = false;
   final int _pageSize = 10;
   int _loadedRoomsCount = 10;
   Timer? _connectivityTimer;
@@ -306,6 +305,271 @@ class _HomePageState extends State<HomePage> {
     _updatePriceControllers();
   }
 
+  int get _activeFilterCount {
+    int count = 0;
+    if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) count++;
+    if (_selectedTown != null && _selectedTown!.isNotEmpty) count++;
+    if (_selectedCategory != null && _selectedCategory!.isNotEmpty) count++;
+    if (_priceRange != null) count++;
+    return count;
+  }
+
+  void _showFilterSheet(BuildContext context, String languageCode) {
+    String t(String key) => AppLocalizations.translate(languageCode, key);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(
+        builder: (bsCtx, setSheet) {
+          void update(VoidCallback fn) {
+            setState(fn);
+            setSheet(() {});
+          }
+
+          final scheme = Theme.of(bsCtx).colorScheme;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(bsCtx).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // drag handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  // header row
+                  Row(
+                    children: [
+                      Icon(Icons.tune_rounded, color: scheme.primary, size: 22),
+                      const SizedBox(width: 8),
+                      Text(
+                        t('filters'),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: () {
+                          update(() {
+                            _selectedDistrict = null;
+                            _selectedTown = null;
+                            _selectedCategory = null;
+                            _priceRange = null;
+                            _resetLoadedRooms();
+                            _applyFilters();
+                            _updatePriceControllers();
+                          });
+                        },
+                        icon: const Icon(Icons.clear_all, size: 18),
+                        label: Text(t('clearFilters')),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 20),
+                  // District + Town
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          value: (_selectedDistrict != null &&
+                                  _districts.contains(_selectedDistrict))
+                              ? _selectedDistrict
+                              : null,
+                          decoration: InputDecoration(
+                            labelText: t('district'),
+                            prefixIcon: const Icon(Icons.location_city),
+                          ),
+                          items: <String>[
+                            AppLocalizations.translate(languageCode, 'all'),
+                            ..._districts,
+                          ]
+                              .map(
+                                (d) => DropdownMenuItem<String>(
+                                  value: d ==
+                                          AppLocalizations.translate(
+                                              languageCode, 'all')
+                                      ? null
+                                      : d,
+                                  child: Text(d),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) {
+                            update(() {
+                              _selectedDistrict = v;
+                              _selectedTown = null;
+                              _resetLoadedRooms();
+                              _applyFilters();
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          value: (_selectedTown != null &&
+                                  _availableTowns.contains(_selectedTown))
+                              ? _selectedTown
+                              : null,
+                          decoration: InputDecoration(
+                            labelText: t('town'),
+                            prefixIcon: const Icon(Icons.location_on),
+                          ),
+                          disabledHint: Text(t('selectDistrictFirst')),
+                          items: <String>[
+                            AppLocalizations.translate(languageCode, 'all'),
+                            ..._availableTowns,
+                          ]
+                              .map(
+                                (tn) => DropdownMenuItem<String>(
+                                  value: tn ==
+                                          AppLocalizations.translate(
+                                              languageCode, 'all')
+                                      ? null
+                                      : tn,
+                                  child: Text(tn),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: _selectedDistrict == null
+                              ? null
+                              : (v) {
+                                  update(() {
+                                    _selectedTown = v;
+                                    _resetLoadedRooms();
+                                    _applyFilters();
+                                  });
+                                },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Category
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: (_selectedCategory != null &&
+                            _categories.contains(_selectedCategory))
+                        ? _selectedCategory
+                        : null,
+                    decoration: InputDecoration(
+                      labelText: t('category'),
+                      prefixIcon: const Icon(Icons.category),
+                    ),
+                    items: <String>[
+                      AppLocalizations.translate(languageCode, 'all'),
+                      ..._categories,
+                    ]
+                        .map(
+                          (c) => DropdownMenuItem<String>(
+                            value: c ==
+                                    AppLocalizations.translate(
+                                        languageCode, 'all')
+                                ? null
+                                : c,
+                            child: Text(c),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) {
+                      update(() {
+                        _selectedCategory = v;
+                        _resetLoadedRooms();
+                        _applyFilters();
+                      });
+                    },
+                  ),
+                  // Price range
+                  if (_priceList.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Price Range (රු./month)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _minPriceController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'Min',
+                              prefixText: 'රු. ',
+                            ),
+                            onChanged: (_) {
+                              update(() => _updatePriceFilterFromInputs());
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _maxPriceController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'Max',
+                              prefixText: 'රු. ',
+                            ),
+                            onChanged: (_) {
+                              update(() => _updatePriceFilterFromInputs());
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(bsCtx).pop(),
+                      child: const Text('Done'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = AppState.instance;
@@ -316,49 +580,73 @@ class _HomePageState extends State<HomePage> {
         String t(String key) => AppLocalizations.translate(languageCode, key);
         return Scaffold(
           appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(
-              Icons.home_work,
-              color: Theme.of(context).colorScheme.primary,
-              size: 28,
+            title: Row(
+              children: [
+                const Icon(Icons.home_work, color: Colors.white, size: 28),
+                const SizedBox(width: 10),
+                const Text(
+                  'බෝඩිම්.lk',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Text(
-              'බෝඩිම්.lk',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+            backgroundColor: const Color(0xFF1E1B4B),
+            foregroundColor: Colors.white,
+            iconTheme: const IconThemeData(color: Colors.white),
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            actions: [
+              // Filter button with active-count badge
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.tune_rounded),
+                    tooltip: t('filters'),
+                    onPressed: () => _showFilterSheet(context, languageCode),
+                  ),
+                  if (_activeFilterCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF59E0B),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$_activeFilterCount',
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.white.withOpacity(0.9),
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        actions: [
-          PopupMenuButton<String>(
-            tooltip: t('language'),
-            child: Text(
-              languageCode == 'si'
-                  ? t('sinhala')
-                  : languageCode == 'ta'
-                      ? t('tamil')
-                      : t('english'),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
+              // Language selector (icon)
+              PopupMenuButton<String>(
+                tooltip: t('language'),
+                icon: const Icon(Icons.language_rounded, color: Colors.white),
+                onSelected: (value) => AppState.instance.setLanguageCode(value),
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'en', child: Text(t('english'))),
+                  const PopupMenuItem(value: 'si', child: Text('සිංහල')),
+                  const PopupMenuItem(value: 'ta', child: Text('தமிழ்')),
+                ],
               ),
-            ),
-            onSelected: (value) => AppState.instance.setLanguageCode(value),
-            itemBuilder: (_) => [
-              PopupMenuItem(value: 'en', child: Text(t('english'))),
-              const PopupMenuItem(value: 'si', child: Text('සිංහල')),
-              const PopupMenuItem(value: 'ta', child: Text('தமிழ்')),
-            ],
-          ),
           IconButton(
             onPressed: () async {
               if (AppState.instance.currentUser.value == null) {
@@ -382,7 +670,7 @@ class _HomePageState extends State<HomePage> {
             },
             icon: const Icon(Icons.create),
             tooltip: t('createAd'),
-            color: Theme.of(context).colorScheme.primary,
+            color: Colors.white,
           ),
           ValueListenableBuilder(
             valueListenable: app.currentUser,
@@ -395,7 +683,7 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(Icons.login),
                   label: Text(t('login')),
                   style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
@@ -468,7 +756,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                   icon: Icon(
                     Icons.person,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Colors.white,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -610,345 +898,72 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-                    // Modern filter card
-                    Card(
-                      margin: const EdgeInsets.all(12),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _filtersExpanded = !_filtersExpanded;
-                                });
-                              },
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.filter_list,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                    // Active filter chips
+                    if (_activeFilterCount > 0)
+                      Container(
+                        color: Colors.black26,
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              if (_selectedDistrict != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Chip(
+                                    label: Text(_selectedDistrict!),
+                                    deleteIcon: const Icon(Icons.close, size: 16),
+                                    onDeleted: () => setState(() {
+                                      _selectedDistrict = null;
+                                      _selectedTown = null;
+                                      _resetLoadedRooms();
+                                      _applyFilters();
+                                    }),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    t('filters'),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              if (_selectedTown != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Chip(
+                                    label: Text(_selectedTown!),
+                                    deleteIcon: const Icon(Icons.close, size: 16),
+                                    onDeleted: () => setState(() {
+                                      _selectedTown = null;
+                                      _resetLoadedRooms();
+                                      _applyFilters();
+                                    }),
                                   ),
-                                  const Spacer(),
-                                  IconButton(
-                                    tooltip: t('clearFilters'),
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedDistrict = null;
-                                        _selectedTown = null;
-                                        _selectedCategory = null;
-                                        _priceRange = null;
-                                        _resetLoadedRooms();
-                                        _applyFilters();
-                                        _updatePriceControllers();
-                                      });
-                                    },
+                                ),
+                              if (_selectedCategory != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Chip(
+                                    label: Text(_selectedCategory!),
+                                    deleteIcon: const Icon(Icons.close, size: 16),
+                                    onDeleted: () => setState(() {
+                                      _selectedCategory = null;
+                                      _resetLoadedRooms();
+                                      _applyFilters();
+                                    }),
                                   ),
-                                  IconButton(
-                                    tooltip: _filtersExpanded
-                                        ? t('collapseFilters')
-                                        : t('expandFilters'),
-                                    icon: Icon(
-                                      _filtersExpanded
-                                          ? Icons.expand_less
-                                          : Icons.expand_more,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _filtersExpanded = !_filtersExpanded;
-                                      });
-                                    },
+                                ),
+                              if (_priceRange != null)
+                                Chip(
+                                  label: Text(
+                                    'රු.${_priceRange!.start.round()}–${_priceRange!.end.round()}',
                                   ),
-                                ],
-                              ),
-                            ),
-                            AnimatedSize(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                              child: _filtersExpanded
-                                  ? Padding(
-                                      padding: const EdgeInsets.only(top: 8),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: DropdownButtonFormField<String>(
-                                                  isExpanded: true,
-                                                  value:
-                                                      (_selectedDistrict !=
-                                                              null &&
-                                                          _districts.contains(
-                                                            _selectedDistrict,
-                                                          ))
-                                                      ? _selectedDistrict
-                                                      : null,
-                                                  decoration: InputDecoration(
-                                                    labelText: t('district'),
-                                                    prefixIcon: const Icon(
-                                                      Icons.location_city,
-                                                    ),
-                                                    border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                    ),
-                                                    contentPadding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 6,
-                                                        ),
-                                                  ),
-                                                  items:
-                                                      <String>[
-                                                            AppLocalizations.translate(
-                                                              languageCode,
-                                                              'all',
-                                                            ),
-                                                            ..._districts,
-                                                          ]
-                                                          .map(
-                                                            (d) =>
-                                                                DropdownMenuItem<
-                                                                  String
-                                                                >(
-                                                                  value:
-                                                                      d == AppLocalizations.translate(
-                                                                        languageCode,
-                                                                        'all',
-                                                                      )
-                                                                      ? null
-                                                                      : d,
-                                                                  child: Text(
-                                                                    d,
-                                                                  ),
-                                                                ),
-                                                          )
-                                                          .toList(),
-                                                  onChanged: (v) {
-                                                    setState(() {
-                                                      _selectedDistrict = v;
-                                                      _selectedTown = null;
-                                                      _resetLoadedRooms();
-                                                      _applyFilters();
-                                                    });
-                                                  },
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: DropdownButtonFormField<String>(
-                                                  isExpanded: true,
-                                                  value:
-                                                      (_selectedTown != null &&
-                                                          _availableTowns.contains(
-                                                            _selectedTown,
-                                                          ))
-                                                      ? _selectedTown
-                                                      : null,
-                                                  decoration: InputDecoration(
-                                                    labelText: t('town'),
-                                                    prefixIcon: const Icon(
-                                                      Icons.location_on,
-                                                    ),
-                                                    border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                    ),
-                                                    contentPadding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 6,
-                                                        ),
-                                                  ),
-                                                  disabledHint: Text(t('selectDistrictFirst')),
-                                                  items:
-                                                      <String>[
-                                                            AppLocalizations.translate(
-                                                              languageCode,
-                                                              'all',
-                                                            ),
-                                                            ..._availableTowns,
-                                                          ]
-                                                          .map(
-                                                            (t) =>
-                                                                DropdownMenuItem<
-                                                                  String
-                                                                >(
-                                                                  value:
-                                                                      t == AppLocalizations.translate(
-                                                                        languageCode,
-                                                                        'all',
-                                                                      )
-                                                                      ? null
-                                                                      : t,
-                                                                  child: Text(
-                                                                    t,
-                                                                  ),
-                                                                ),
-                                                          )
-                                                          .toList(),
-                                                  onChanged: _selectedDistrict == null
-                                                      ? null
-                                                      : (v) {
-                                                          setState(() {
-                                                            _selectedTown = v;
-                                                            _resetLoadedRooms();
-                                                            _applyFilters();
-                                                          });
-                                                        },
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 10),
-                                          DropdownButtonFormField<String>(
-                                            isExpanded: true,
-                                            value:
-                                                (_selectedCategory != null &&
-                                                    _categories.contains(
-                                                      _selectedCategory,
-                                                    ))
-                                                ? _selectedCategory
-                                                : null,
-                                            decoration: InputDecoration(
-                                              labelText: t('category'),
-                                              prefixIcon: const Icon(
-                                                Icons.category,
-                                              ),
-                                              border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 6,
-                                                  ),
-                                            ),
-                                            items:
-                                                <String>[
-                                                      AppLocalizations.translate(
-                                                        languageCode,
-                                                        'all',
-                                                      ),
-                                                      ..._categories,
-                                                    ]
-                                                    .map(
-                                                      (c) =>
-                                                          DropdownMenuItem<
-                                                            String
-                                                          >(
-                                                            value: c == AppLocalizations.translate(languageCode, 'all')
-                                                                ? null
-                                                                : c,
-                                                            child: Text(c),
-                                                          ),
-                                                    )
-                                                    .toList(),
-                                            onChanged: (v) {
-                                              setState(() {
-                                                _selectedCategory = v;
-                                                _resetLoadedRooms();
-                                                _applyFilters();
-                                              });
-                                            },
-                                          ),
-                                          // Price filter (RangeSlider) — visible only when numeric prices exist
-                                          if (_priceList.isNotEmpty) ...[
-                                            const SizedBox(height: 10),
-                                            Text(
-                                              'Price Range (රු./month)',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleSmall
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: TextFormField(
-                                                    controller: _minPriceController,
-                                                    keyboardType: TextInputType.number,
-                                                    inputFormatters: [
-                                                      FilteringTextInputFormatter.digitsOnly,
-                                                    ],
-                                                    decoration: InputDecoration(
-                                                      labelText: 'Min price',
-                                                      prefixText: 'රු. ',
-                                                      border: OutlineInputBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(12),
-                                                      ),
-                                                      contentPadding:
-                                                          const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 6,
-                                                      ),
-                                                    ),
-                                                    onChanged: (_) => _updatePriceFilterFromInputs(),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: TextFormField(
-                                                    controller: _maxPriceController,
-                                                    keyboardType: TextInputType.number,
-                                                    inputFormatters: [
-                                                      FilteringTextInputFormatter.digitsOnly,
-                                                    ],
-                                                    decoration: InputDecoration(
-                                                      labelText: 'Max price',
-                                                      prefixText: 'රු. ',
-                                                      border: OutlineInputBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(12),
-                                                      ),
-                                                      contentPadding:
-                                                          const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 6,
-                                                      ),
-                                                    ),
-                                                    onChanged: (_) => _updatePriceFilterFromInputs(),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
+                                  deleteIcon: const Icon(Icons.close, size: 16),
+                                  onDeleted: () => setState(() {
+                                    _priceRange = null;
+                                    _resetLoadedRooms();
+                                    _applyFilters();
+                                    _updatePriceControllers();
+                                  }),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                     Expanded(
                       child: isLoadingRooms
                           ? const Center(child: CircularProgressIndicator())
@@ -1067,7 +1082,7 @@ class _HomePageState extends State<HomePage> {
                                     );
                                   }
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 2),
+                                    padding: const EdgeInsets.only(bottom: 6),
                                     child: RoomCard(
                                       room: filtered[index],
                                       hideTitle: true,
