@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/room.dart';
 import '../services/app_state.dart';
+import '../services/localization.dart';
 import 'add_post_page.dart';
 import '../widgets/pressable_scale.dart';
 
@@ -19,6 +20,9 @@ class RoomDetailPage extends StatefulWidget {
 
 class _RoomDetailPageState extends State<RoomDetailPage> {
   int _page = 0;
+
+  String _t(String key) =>
+      AppLocalizations.translate(AppState.instance.languageCode.value, key);
 
   @override
   void initState() {
@@ -69,8 +73,8 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     if (!launched) {
       await Clipboard.setData(ClipboardData(text: sanitized));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open dialer — number copied to clipboard'),
+        SnackBar(
+          content: Text(_t('couldNotOpenDialer')),
         ),
       );
     }
@@ -84,10 +88,8 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     if (!launched) {
       await Clipboard.setData(ClipboardData(text: sanitized));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Could not open messaging app — number copied to clipboard',
-          ),
+        SnackBar(
+          content: Text(_t('couldNotOpenMessagingApp')),
         ),
       );
     }
@@ -148,9 +150,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     print('All attempts failed, showing SnackBar');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'Could not open WhatsApp for $n — is WhatsApp installed?',
-        ),
+        content: Text(_t('couldNotOpenWhatsApp')),
       ),
     );
   }
@@ -170,15 +170,15 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           contentTextStyle: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
-          title: const Text('Delete Ad'),
-          content: const Text('Are you sure you want to delete this ad?'),
+          title: Text(_t('deleteAd')),
+          content: Text(_t('deleteAdConfirmation')),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
               style: TextButton.styleFrom(
                 foregroundColor: theme.colorScheme.primary,
               ),
-              child: const Text('Cancel'),
+              child: Text(_t('cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -190,7 +190,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                 Navigator.of(ctx).pop();
                 parentNavigator.pop(); // back to list
               },
-              child: const Text('Delete'),
+              child: Text(_t('delete')),
             ),
           ],
         );
@@ -217,15 +217,15 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           contentTextStyle: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
-          title: const Text('Confirm Reject'),
-          content: Text('Do you want to reject this ad for "$reason"?'),
+          title: Text(_t('confirmReject')),
+          content: Text('${_t('rejectReasonPrompt')} "$reason"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               style: TextButton.styleFrom(
                 foregroundColor: theme.colorScheme.primary,
               ),
-              child: const Text('Cancel'),
+              child: Text(_t('cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -233,7 +233,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                 foregroundColor: theme.colorScheme.onPrimary,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Reject'),
+              child: Text(_t('reject')),
             ),
           ],
         );
@@ -249,13 +249,13 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       });
       if (!mounted) return;
       ScaffoldMessenger.of(parentContext).showSnackBar(
-        const SnackBar(content: Text('Ad rejected successfully.')),
+        SnackBar(content: Text(_t('adRejectedSuccessfully'))),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         parentContext,
-      ).showSnackBar(SnackBar(content: Text('Failed to reject ad: $e')));
+      ).showSnackBar(SnackBar(content: Text('${_t('failedToRejectAd')} $e')));
     }
   }
 
@@ -277,9 +277,15 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           contentTextStyle: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
-          title: Text('$actionLabel Ad'),
+          title: Text(
+            actionLabel == 'Resume'
+                ? _t('resumeAd')
+                : _t('pauseAd'),
+          ),
           content: Text(
-            'Do you want to ${actionLabel.toLowerCase()} this ad and remove it from the home page?',
+            actionLabel == 'Resume'
+                ? _t('resumeAdPrompt')
+                : _t('pauseAdPrompt'),
           ),
           actions: [
             TextButton(
@@ -287,7 +293,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
               style: TextButton.styleFrom(
                 foregroundColor: theme.colorScheme.primary,
               ),
-              child: const Text('Cancel'),
+              child: Text(_t('cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -295,7 +301,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                 foregroundColor: theme.colorScheme.onPrimary,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(actionLabel),
+              child: Text(actionLabel == 'Resume' ? _t('resume') : _t('pause')),
             ),
           ],
         );
@@ -312,14 +318,18 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(parentContext).showSnackBar(
         SnackBar(
-          content: Text('Ad ${isPaused ? 'resumed' : 'paused'} successfully.'),
+          content: Text(isPaused
+              ? _t('adResumedSuccessfully')
+              : _t('adPausedSuccessfully')),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(parentContext).showSnackBar(
         SnackBar(
-          content: Text('Failed to ${isPaused ? 'resume' : 'pause'} ad: $e'),
+          content: Text(isPaused
+              ? '${_t('failedToResumeAd')} $e'
+              : '${_t('failedToPauseAd')} $e'),
         ),
       );
     }
@@ -342,7 +352,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           contentTextStyle: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
-          title: const Text('Reject Ad'),
+          title: Text(_t('rejectAd')),
           content: SizedBox(
             width: double.maxFinite,
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -361,7 +371,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                 final docs = snapshot.data?.docs ?? [];
                 if (docs.isEmpty) {
                   return Text(
-                    'No reject reasons available. Add them in Reject Reasons.',
+                    _t('noRejectReasonsAvailable'),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -404,7 +414,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
               style: TextButton.styleFrom(
                 foregroundColor: theme.colorScheme.primary,
               ),
-              child: const Text('Cancel'),
+              child: Text(_t('cancel')),
             ),
           ],
         );
@@ -439,9 +449,12 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<List<Room>>(
-      valueListenable: AppState.instance.rooms,
-      builder: (context, rooms, _) {
+    return ValueListenableBuilder<String>(
+      valueListenable: AppState.instance.languageCode,
+      builder: (context, languageCode, __) {
+        return ValueListenableBuilder<List<Room>>(
+          valueListenable: AppState.instance.rooms,
+          builder: (context, rooms, _) {
         final room = rooms.firstWhere(
           (r) => r.id == widget.room.id,
           orElse: () => widget.room,
@@ -467,13 +480,15 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                   icon: Icon(
                     room.status == 'paused' ? Icons.play_arrow : Icons.pause,
                   ),
-                  tooltip: room.status == 'paused' ? 'Resume Ad' : 'Pause Ad',
+                  tooltip: room.status == 'paused'
+                      ? _t('resumeAd')
+                      : _t('pauseAd'),
                   onPressed: () => _togglePauseRoom(room),
                 ),
               if (canAdminReject)
                 IconButton(
                   icon: const Icon(Icons.block),
-                  tooltip: 'Reject Ad',
+                  tooltip: _t('rejectAd'),
                   onPressed: room.status == 'rejected'
                       ? null
                       : () => _rejectRoom(room),
@@ -648,7 +663,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Description',
+                                  _t('description'),
                                   style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
@@ -667,7 +682,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Location',
+                                  _t('location'),
                                   style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
@@ -713,7 +728,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                           // Posted time
                           if (room.createdAt != null)
                             Text(
-                              'Posted: ${_formatDateTime(room.createdAt!)}',
+                              '${_t('posted')}: ${_formatDateTime(room.createdAt!)}',
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: Theme.of(
@@ -740,7 +755,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Contact',
+                              _t('contact'),
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
@@ -752,7 +767,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                     child: ElevatedButton.icon(
                                       onPressed: () => _call(room.contact!),
                                       icon: const Icon(Icons.call),
-                                      label: const Text('Call'),
+                                      label: Text(_t('call')),
                                       style: ElevatedButton.styleFrom(
                                         minimumSize: const Size.fromHeight(50),
                                         backgroundColor: Colors.green,
@@ -772,7 +787,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                     child: OutlinedButton.icon(
                                       onPressed: () => _sms(room.contact!),
                                       icon: const Icon(Icons.message),
-                                      label: const Text('SMS'),
+                                      label: Text(_t('sms')),
                                       style: OutlinedButton.styleFrom(
                                         minimumSize: const Size.fromHeight(50),
                                         side: BorderSide(
@@ -799,7 +814,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                     ? () => _whatsapp(room.contact!)
                                     : null,
                                 icon: const Icon(Icons.chat),
-                                label: const Text('WhatsApp'),
+                                label: Text(_t('whatsapp')),
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(50),
                                   side: BorderSide(
@@ -825,6 +840,8 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         );
       },
     );
+  },
+);
   }
 }
 
