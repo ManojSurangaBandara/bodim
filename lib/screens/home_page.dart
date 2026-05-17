@@ -308,10 +308,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Color _themeColor(AppThemeMode mode) => switch (mode) {
-        AppThemeMode.violet => const Color(0xFF7C3AED),
-        AppThemeMode.light  => const Color(0xFF0EA5E9),
-        AppThemeMode.dark   => const Color(0xFF1F2937),
-      };
+    AppThemeMode.violet => const Color(0xFF7C3AED),
+    AppThemeMode.light => const Color(0xFF0EA5E9),
+    AppThemeMode.dark => const Color(0xFF1F2937),
+  };
 
   Widget _themeMenuItem(String label, Color color, bool isActive) {
     return Row(
@@ -327,7 +327,12 @@ class _HomePageState extends State<HomePage> {
               width: 2.5,
             ),
             boxShadow: isActive
-                ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4)]
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.5),
+                      blurRadius: 4,
+                    ),
+                  ]
                 : null,
           ),
         ),
@@ -338,10 +343,7 @@ class _HomePageState extends State<HomePage> {
             fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
           ),
         ),
-        if (isActive) ...[
-          const Spacer(),
-          const Icon(Icons.check, size: 16),
-        ],
+        if (isActive) ...[const Spacer(), const Icon(Icons.check, size: 16)],
       ],
     );
   }
@@ -435,7 +437,8 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
-                          value: (_selectedDistrict != null &&
+                          value:
+                              (_selectedDistrict != null &&
                                   _districts.contains(_selectedDistrict))
                               ? _selectedDistrict
                               : null,
@@ -443,21 +446,28 @@ class _HomePageState extends State<HomePage> {
                             labelText: t('district'),
                             prefixIcon: const Icon(Icons.location_city),
                           ),
-                          items: <String>[
-                            AppLocalizations.translate(languageCode, 'all'),
-                            ..._districts,
-                          ]
-                              .map(
-                                (d) => DropdownMenuItem<String>(
-                                  value: d ==
-                                          AppLocalizations.translate(
-                                              languageCode, 'all')
-                                      ? null
-                                      : d,
-                                  child: Text(d),
-                                ),
-                              )
-                              .toList(),
+                          items:
+                              <String>[
+                                    AppLocalizations.translate(
+                                      languageCode,
+                                      'all',
+                                    ),
+                                    ..._districts,
+                                  ]
+                                  .map(
+                                    (d) => DropdownMenuItem<String>(
+                                      value:
+                                          d ==
+                                              AppLocalizations.translate(
+                                                languageCode,
+                                                'all',
+                                              )
+                                          ? null
+                                          : d,
+                                      child: Text(d),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (v) {
                             update(() {
                               _selectedDistrict = v;
@@ -472,7 +482,8 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
-                          value: (_selectedTown != null &&
+                          value:
+                              (_selectedTown != null &&
                                   _availableTowns.contains(_selectedTown))
                               ? _selectedTown
                               : null,
@@ -481,21 +492,28 @@ class _HomePageState extends State<HomePage> {
                             prefixIcon: const Icon(Icons.location_on),
                           ),
                           disabledHint: Text(t('selectDistrictFirst')),
-                          items: <String>[
-                            AppLocalizations.translate(languageCode, 'all'),
-                            ..._availableTowns,
-                          ]
-                              .map(
-                                (tn) => DropdownMenuItem<String>(
-                                  value: tn ==
-                                          AppLocalizations.translate(
-                                              languageCode, 'all')
-                                      ? null
-                                      : tn,
-                                  child: Text(tn),
-                                ),
-                              )
-                              .toList(),
+                          items:
+                              <String>[
+                                    AppLocalizations.translate(
+                                      languageCode,
+                                      'all',
+                                    ),
+                                    ..._availableTowns,
+                                  ]
+                                  .map(
+                                    (tn) => DropdownMenuItem<String>(
+                                      value:
+                                          tn ==
+                                              AppLocalizations.translate(
+                                                languageCode,
+                                                'all',
+                                              )
+                                          ? null
+                                          : tn,
+                                      child: Text(tn),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: _selectedDistrict == null
                               ? null
                               : (v) {
@@ -513,7 +531,8 @@ class _HomePageState extends State<HomePage> {
                   // Category
                   DropdownButtonFormField<String>(
                     isExpanded: true,
-                    value: (_selectedCategory != null &&
+                    value:
+                        (_selectedCategory != null &&
                             _categories.contains(_selectedCategory))
                         ? _selectedCategory
                         : null,
@@ -521,21 +540,25 @@ class _HomePageState extends State<HomePage> {
                       labelText: t('category'),
                       prefixIcon: const Icon(Icons.category),
                     ),
-                    items: <String>[
-                      AppLocalizations.translate(languageCode, 'all'),
-                      ..._categories,
-                    ]
-                        .map(
-                          (c) => DropdownMenuItem<String>(
-                            value: c ==
-                                    AppLocalizations.translate(
-                                        languageCode, 'all')
-                                ? null
-                                : c,
-                            child: Text(c),
-                          ),
-                        )
-                        .toList(),
+                    items:
+                        <String>[
+                              AppLocalizations.translate(languageCode, 'all'),
+                              ..._categories,
+                            ]
+                            .map(
+                              (c) => DropdownMenuItem<String>(
+                                value:
+                                    c ==
+                                        AppLocalizations.translate(
+                                          languageCode,
+                                          'all',
+                                        )
+                                    ? null
+                                    : c,
+                                child: Text(c),
+                              ),
+                            )
+                            .toList(),
                     onChanged: (v) {
                       update(() {
                         _selectedCategory = v;
@@ -657,18 +680,27 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (_) => [
                   PopupMenuItem(
                     value: AppThemeMode.violet,
-                    child: _themeMenuItem('Violet', const Color(0xFF7C3AED),
-                        currentMode == AppThemeMode.violet),
+                    child: _themeMenuItem(
+                      'Violet',
+                      const Color(0xFF7C3AED),
+                      currentMode == AppThemeMode.violet,
+                    ),
                   ),
                   PopupMenuItem(
                     value: AppThemeMode.light,
-                    child: _themeMenuItem('Light', const Color(0xFF0EA5E9),
-                        currentMode == AppThemeMode.light),
+                    child: _themeMenuItem(
+                      'Light',
+                      const Color(0xFF0EA5E9),
+                      currentMode == AppThemeMode.light,
+                    ),
                   ),
                   PopupMenuItem(
                     value: AppThemeMode.dark,
-                    child: _themeMenuItem('Dark', const Color(0xFF1F2937),
-                        currentMode == AppThemeMode.dark),
+                    child: _themeMenuItem(
+                      'Dark',
+                      const Color(0xFF1F2937),
+                      currentMode == AppThemeMode.dark,
+                    ),
                   ),
                 ],
                 child: Padding(
@@ -682,7 +714,9 @@ class _HomePageState extends State<HomePage> {
                       border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: _themeColor(currentMode).withValues(alpha: 0.7),
+                          color: _themeColor(
+                            currentMode,
+                          ).withValues(alpha: 0.7),
                           blurRadius: 6,
                         ),
                       ],
@@ -731,8 +765,8 @@ class _HomePageState extends State<HomePage> {
                   languageCode == 'si'
                       ? 'සිං'
                       : languageCode == 'ta'
-                          ? 'த'
-                          : 'En',
+                      ? 'த'
+                      : 'En',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -746,178 +780,571 @@ class _HomePageState extends State<HomePage> {
                   const PopupMenuItem(value: 'ta', child: Text('தமிழ்')),
                 ],
               ),
-          IconButton(
-            onPressed: () async {
-              if (AppState.instance.currentUser.value == null) {
-                final signed = await AppState.instance.signInAnonymously();
-                if (!signed) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        t('unableStartAnonymous'),
-                      ),
-                    ),
-                  );
-                  return;
-                }
-              }
-              if (!mounted) return;
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AddPostPage()),
-              );
-            },
-            icon: const Icon(Icons.create),
-            tooltip: t('createAd'),
-            color: Colors.white,
-          ),
-          ValueListenableBuilder(
-            valueListenable: app.currentUser,
-            builder: (context, user, child) {
-              if (user == null || app.isAnonymous) {
-                return TextButton.icon(
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (_) => const LoginPage())),
-                  icon: const Icon(Icons.login),
-                  label: Text(t('login')),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                );
-              } else {
-                return PopupMenuButton<int>(
-                  onSelected: (v) {
-                    if (v == 10) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const AddPostPage()),
+              IconButton(
+                onPressed: () async {
+                  if (AppState.instance.currentUser.value == null) {
+                    final signed = await AppState.instance.signInAnonymously();
+                    if (!signed) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(t('unableStartAnonymous'))),
                       );
-                    } else if (v == 1) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const MyAdsPage()),
-                      );
-                    } else if (v == 2) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ProfilePage()),
-                      );
-                    } else if (v == 3) {
-                      app.logout();
-                    } else if (v == 4) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const PendingAdsPage(),
-                        ),
-                      );
-                    } else if (v == 5) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const RejectReasonsPage(),
-                        ),
-                      );
-                    } else if (v == 6) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const CategoriesPage(),
-                        ),
-                      );
+                      return;
                     }
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 0,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.email,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(user.email.isNotEmpty ? user.email : ''),
-                        ],
+                  }
+                  if (!mounted) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AddPostPage()),
+                  );
+                },
+                icon: const Icon(Icons.create),
+                tooltip: t('createAd'),
+                color: Colors.white,
+              ),
+              ValueListenableBuilder(
+                valueListenable: app.currentUser,
+                builder: (context, user, child) {
+                  if (user == null || app.isAnonymous) {
+                    return TextButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
                       ),
-                    ),
-                    PopupMenuItem(value: 10, child: Text(t('createAd'))),
-                    PopupMenuItem(value: 1, child: Text(t('myAds'))),
-                    PopupMenuItem(value: 2, child: Text(t('profile'))),
-                    if (user.isAdmin) ...[
-                      PopupMenuItem(value: 4, child: Text(t('pendingAds'))),
-                      PopupMenuItem(
-                        value: 5,
-                        child: Text(t('rejectReasons')),
+                      icon: const Icon(Icons.login),
+                      label: Text(t('login')),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
-                      PopupMenuItem(value: 6, child: Text(t('categories'))),
-                    ],
-                    PopupMenuItem(value: 3, child: Text(t('logout'))),
-                  ],
-                  icon: Icon(
-                    Icons.person,
-                    color: Colors.white,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                );
-              }
-            },
-          ),
-        ],
-      ),
-
-      // body: add location filter above the list
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [grad.bodyStart, grad.bodyEnd],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: Stack(
-          children: [
-            ValueListenableBuilder<List>(
-              valueListenable: app.rooms,
-              builder: (context, rooms, child) {
-                final filtered = _filteredRooms;
-                final isLoadingRooms = AppState.instance.roomsLoading.value;
-
-                return Column(
-                  children: [
-                    ValueListenableBuilder<bool>(
-                      valueListenable: AppState.instance.updateAvailable,
-                      builder: (context, available, _) {
-                        if (!available) return const SizedBox.shrink();
-                        return Container(
-                          margin: const EdgeInsets.all(12),
-                          child: Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            color: Colors.orange.shade50,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
+                    );
+                  } else {
+                    return ValueListenableBuilder<List<Room>>(
+                      valueListenable: app.rooms,
+                      builder: (context, rooms, _) {
+                        final pendingCount = rooms
+                            .where((room) => room.status == 'pending')
+                            .length;
+                        return PopupMenuButton<int>(
+                          onSelected: (v) {
+                            if (v == 10) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const AddPostPage(),
+                                ),
+                              );
+                            } else if (v == 1) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const MyAdsPage(),
+                                ),
+                              );
+                            } else if (v == 2) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const ProfilePage(),
+                                ),
+                              );
+                            } else if (v == 3) {
+                              app.logout();
+                            } else if (v == 4) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const PendingAdsPage(),
+                                ),
+                              );
+                            } else if (v == 5) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const RejectReasonsPage(),
+                                ),
+                              );
+                            } else if (v == 6) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const CategoriesPage(),
+                                ),
+                              );
+                            }
+                          },
+                          itemBuilder: (_) => [
+                            PopupMenuItem(
+                              value: 0,
                               child: Row(
                                 children: [
                                   Icon(
-                                    Icons.system_update,
-                                    color: Colors.orange.shade700,
-                                    size: 24,
+                                    Icons.email,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      'A new version is available!',
-                                      style: TextStyle(
-                                        color: Colors.orange.shade800,
-                                        fontWeight: FontWeight.w600,
+                                  const SizedBox(width: 8),
+                                  Text(user.email.isNotEmpty ? user.email : ''),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 10,
+                              child: Text(t('createAd')),
+                            ),
+                            PopupMenuItem(value: 1, child: Text(t('myAds'))),
+                            PopupMenuItem(value: 2, child: Text(t('profile'))),
+                            if (user.isAdmin) ...[
+                              PopupMenuItem(
+                                value: 4,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(t('pendingAds')),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '$pendingCount',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 5,
+                                child: Text(t('rejectReasons')),
+                              ),
+                              PopupMenuItem(
+                                value: 6,
+                                child: Text(t('categories')),
+                              ),
+                            ],
+                            PopupMenuItem(value: 3, child: Text(t('logout'))),
+                          ],
+                          icon: Icon(Icons.person, color: Colors.white),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        );
+                      },
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+
+          // body: add location filter above the list
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [grad.bodyStart, grad.bodyEnd],
+                stops: const [0.0, 1.0],
+              ),
+            ),
+            child: Stack(
+              children: [
+                ValueListenableBuilder<List>(
+                  valueListenable: app.rooms,
+                  builder: (context, rooms, child) {
+                    final filtered = _filteredRooms;
+                    final isLoadingRooms = AppState.instance.roomsLoading.value;
+
+                    return Column(
+                      children: [
+                        ValueListenableBuilder<bool>(
+                          valueListenable: AppState.instance.updateAvailable,
+                          builder: (context, available, _) {
+                            if (!available) return const SizedBox.shrink();
+                            return Container(
+                              margin: const EdgeInsets.all(12),
+                              child: Card(
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                color: Colors.orange.shade50,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.system_update,
+                                        color: Colors.orange.shade700,
+                                        size: 24,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          'A new version is available!',
+                                          style: TextStyle(
+                                            color: Colors.orange.shade800,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          final url =
+                                              AppState.instance.updateUrl.value;
+                                          if (url != null) {
+                                            await launchUrl(
+                                              Uri.parse(url),
+                                              mode: LaunchMode
+                                                  .externalApplication,
+                                            );
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              Colors.orange.shade600,
+                                          foregroundColor: Colors.white,
+                                          minimumSize: const Size(80, 40),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Text('Update'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        if (_isOffline || _showBackOnline)
+                          Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            child: Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              color: _isOffline
+                                  ? Colors.red.shade50
+                                  : Colors.green.shade50,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _isOffline ? Icons.wifi_off : Icons.wifi,
+                                      color: _isOffline
+                                          ? Colors.red.shade700
+                                          : Colors.green.shade700,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        _isOffline
+                                            ? 'You\'re offline — check your connection'
+                                            : 'Back online!',
+                                        style: TextStyle(
+                                          color: _isOffline
+                                              ? Colors.red.shade800
+                                              : Colors.green.shade800,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    if (_isOffline)
+                                      TextButton(
+                                        onPressed: _retryConnectivity,
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red.shade700,
+                                        ),
+                                        child: const Text('Retry'),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        // Active filter chips
+                        if (_activeFilterCount > 0)
+                          Container(
+                            color: Colors.black26,
+                            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  if (_selectedDistrict != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: Chip(
+                                        label: Text(_selectedDistrict!),
+                                        deleteIcon: const Icon(
+                                          Icons.close,
+                                          size: 16,
+                                        ),
+                                        onDeleted: () => setState(() {
+                                          _selectedDistrict = null;
+                                          _selectedTown = null;
+                                          _resetLoadedRooms();
+                                          _applyFilters();
+                                        }),
+                                      ),
+                                    ),
+                                  if (_selectedTown != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: Chip(
+                                        label: Text(_selectedTown!),
+                                        deleteIcon: const Icon(
+                                          Icons.close,
+                                          size: 16,
+                                        ),
+                                        onDeleted: () => setState(() {
+                                          _selectedTown = null;
+                                          _resetLoadedRooms();
+                                          _applyFilters();
+                                        }),
+                                      ),
+                                    ),
+                                  if (_selectedCategory != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: Chip(
+                                        label: Text(_selectedCategory!),
+                                        deleteIcon: const Icon(
+                                          Icons.close,
+                                          size: 16,
+                                        ),
+                                        onDeleted: () => setState(() {
+                                          _selectedCategory = null;
+                                          _resetLoadedRooms();
+                                          _applyFilters();
+                                        }),
+                                      ),
+                                    ),
+                                  if (_priceRange != null)
+                                    Chip(
+                                      label: Text(
+                                        'රු.${_priceRange!.start.round()}–${_priceRange!.end.round()}',
+                                      ),
+                                      deleteIcon: const Icon(
+                                        Icons.close,
+                                        size: 16,
+                                      ),
+                                      onDeleted: () => setState(() {
+                                        _priceRange = null;
+                                        _resetLoadedRooms();
+                                        _applyFilters();
+                                        _updatePriceControllers();
+                                      }),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        Expanded(
+                          child: isLoadingRooms
+                              ? const Center(child: CircularProgressIndicator())
+                              : filtered.isEmpty
+                              ? Center(
+                                  child: Card(
+                                    elevation: 4,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    margin: const EdgeInsets.all(24),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(32),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.search_off,
+                                            size: 80,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withOpacity(0.7),
+                                          ),
+                                          const SizedBox(height: 24),
+                                          Text(
+                                            'No rooms found',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headlineSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary,
+                                                ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            t('noListingsMessage'),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.copyWith(
+                                                  color: Colors.grey[600],
+                                                ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 24),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              setState(() {
+                                                _selectedDistrict = null;
+                                                _selectedTown = null;
+                                                _priceRange = null;
+                                                _resetLoadedRooms();
+                                                _applyFilters();
+                                              });
+                                            },
+                                            icon: const Icon(Icons.refresh),
+                                            label: Text(t('clearFilters')),
+                                            style: ElevatedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 24,
+                                                    vertical: 12,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
+                                )
+                              : NotificationListener<ScrollNotification>(
+                                  onNotification: (notification) {
+                                    if (notification.metrics.pixels >=
+                                            notification
+                                                    .metrics
+                                                    .maxScrollExtent -
+                                                200 &&
+                                        _loadedRoomsCount < filtered.length) {
+                                      setState(() {
+                                        _loadedRoomsCount = min(
+                                          filtered.length,
+                                          _loadedRoomsCount + _pageSize,
+                                        );
+                                      });
+                                    }
+                                    return false;
+                                  },
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 2,
+                                    ),
+                                    itemCount:
+                                        min(
+                                          filtered.length,
+                                          _loadedRoomsCount,
+                                        ) +
+                                        (filtered.length > _loadedRoomsCount
+                                            ? 1
+                                            : 0),
+                                    itemBuilder: (context, index) {
+                                      if (index >=
+                                          min(
+                                            filtered.length,
+                                            _loadedRoomsCount,
+                                          )) {
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                          ),
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 6,
+                                        ),
+                                        child: RoomCard(
+                                          room: filtered[index],
+                                          hideTitle: true,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
+                ValueListenableBuilder<bool>(
+                  valueListenable: AppState.instance.forceUpdateRequired,
+                  builder: (context, forceUpdate, _) {
+                    if (!forceUpdate) return const SizedBox.shrink();
+                    return Positioned.fill(
+                      child: AbsorbPointer(
+                        absorbing: true,
+                        child: Container(
+                          color: Colors.white.withOpacity(0.95),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.all(24),
+                          child: Card(
+                            elevation: 8,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.system_update,
+                                    size: 48,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Update Required',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'A mandatory update is available. You must update the app before continuing.',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 20),
                                   ElevatedButton(
                                     onPressed: () async {
                                       final url =
@@ -930,345 +1357,30 @@ class _HomePageState extends State<HomePage> {
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.orange.shade600,
-                                      foregroundColor: Colors.white,
-                                      minimumSize: const Size(80, 40),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 12,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                    child: const Text('Update'),
+                                    child: const Text('Update Now'),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                    if (_isOffline || _showBackOnline)
-                      Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        child: Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          color: _isOffline
-                              ? Colors.red.shade50
-                              : Colors.green.shade50,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _isOffline ? Icons.wifi_off : Icons.wifi,
-                                  color: _isOffline
-                                      ? Colors.red.shade700
-                                      : Colors.green.shade700,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _isOffline
-                                        ? 'You\'re offline — check your connection'
-                                        : 'Back online!',
-                                    style: TextStyle(
-                                      color: _isOffline
-                                          ? Colors.red.shade800
-                                          : Colors.green.shade800,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                if (_isOffline)
-                                  TextButton(
-                                    onPressed: _retryConnectivity,
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.red.shade700,
-                                    ),
-                                    child: const Text('Retry'),
-                                  ),
-                              ],
-                            ),
-                          ),
                         ),
                       ),
-                    // Active filter chips
-                    if (_activeFilterCount > 0)
-                      Container(
-                        color: Colors.black26,
-                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              if (_selectedDistrict != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: Chip(
-                                    label: Text(_selectedDistrict!),
-                                    deleteIcon: const Icon(Icons.close, size: 16),
-                                    onDeleted: () => setState(() {
-                                      _selectedDistrict = null;
-                                      _selectedTown = null;
-                                      _resetLoadedRooms();
-                                      _applyFilters();
-                                    }),
-                                  ),
-                                ),
-                              if (_selectedTown != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: Chip(
-                                    label: Text(_selectedTown!),
-                                    deleteIcon: const Icon(Icons.close, size: 16),
-                                    onDeleted: () => setState(() {
-                                      _selectedTown = null;
-                                      _resetLoadedRooms();
-                                      _applyFilters();
-                                    }),
-                                  ),
-                                ),
-                              if (_selectedCategory != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: Chip(
-                                    label: Text(_selectedCategory!),
-                                    deleteIcon: const Icon(Icons.close, size: 16),
-                                    onDeleted: () => setState(() {
-                                      _selectedCategory = null;
-                                      _resetLoadedRooms();
-                                      _applyFilters();
-                                    }),
-                                  ),
-                                ),
-                              if (_priceRange != null)
-                                Chip(
-                                  label: Text(
-                                    'රු.${_priceRange!.start.round()}–${_priceRange!.end.round()}',
-                                  ),
-                                  deleteIcon: const Icon(Icons.close, size: 16),
-                                  onDeleted: () => setState(() {
-                                    _priceRange = null;
-                                    _resetLoadedRooms();
-                                    _applyFilters();
-                                    _updatePriceControllers();
-                                  }),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    Expanded(
-                      child: isLoadingRooms
-                          ? const Center(child: CircularProgressIndicator())
-                          : filtered.isEmpty
-                          ? Center(
-                              child: Card(
-                                elevation: 4,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                margin: const EdgeInsets.all(24),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(32),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.search_off,
-                                        size: 80,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.7),
-                                      ),
-                                      const SizedBox(height: 24),
-                                      Text(
-                                        'No rooms found',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                            ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        t('noListingsMessage'),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(color: Colors.grey[600]),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 24),
-                                      ElevatedButton.icon(
-                                        onPressed: () {
-                                          setState(() {
-                                            _selectedDistrict = null;
-                                            _selectedTown = null;
-                                            _priceRange = null;
-                                            _resetLoadedRooms();
-                                            _applyFilters();
-                                          });
-                                        },
-                                        icon: const Icon(Icons.refresh),
-                                        label: Text(t('clearFilters')),
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            )
-                          : NotificationListener<ScrollNotification>(
-                              onNotification: (notification) {
-                                if (notification.metrics.pixels >=
-                                        notification.metrics.maxScrollExtent -
-                                            200 &&
-                                    _loadedRoomsCount < filtered.length) {
-                                  setState(() {
-                                    _loadedRoomsCount = min(
-                                      filtered.length,
-                                      _loadedRoomsCount + _pageSize,
-                                    );
-                                  });
-                                }
-                                return false;
-                              },
-                              child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 2,
-                                ),
-                                itemCount:
-                                    min(filtered.length, _loadedRoomsCount) +
-                                    (filtered.length > _loadedRoomsCount
-                                        ? 1
-                                        : 0),
-                                itemBuilder: (context, index) {
-                                  if (index >=
-                                      min(filtered.length, _loadedRoomsCount)) {
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 6),
-                                    child: RoomCard(
-                                      room: filtered[index],
-                                      hideTitle: true,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                    ),
-                  ],
-                );
-              },
+                    );
+                  },
+                ),
+              ],
             ),
-
-            ValueListenableBuilder<bool>(
-              valueListenable: AppState.instance.forceUpdateRequired,
-              builder: (context, forceUpdate, _) {
-                if (!forceUpdate) return const SizedBox.shrink();
-                return Positioned.fill(
-                  child: AbsorbPointer(
-                    absorbing: true,
-                    child: Container(
-                      color: Colors.white.withOpacity(0.95),
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.all(24),
-                      child: Card(
-                        elevation: 8,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.system_update,
-                                size: 48,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Update Required',
-                                style: Theme.of(context).textTheme.headlineSmall
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'A mandatory update is available. You must update the app before continuing.',
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 20),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  final url = AppState.instance.updateUrl.value;
-                                  if (url != null) {
-                                    await launchUrl(
-                                      Uri.parse(url),
-                                      mode: LaunchMode.externalApplication,
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: const Text('Update Now'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
-  },
-); 
   }
 }
