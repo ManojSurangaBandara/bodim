@@ -12,6 +12,7 @@ import '../widgets/pressable_scale.dart';
 
 import '../models/room.dart';
 import '../services/app_state.dart';
+import '../services/localization.dart';
 
 class AddPostPage extends StatefulWidget {
   final Room? roomToEdit;
@@ -29,6 +30,10 @@ class _AddPostPageState extends State<AddPostPage> {
   final List<String> _localImagePaths = [];
   final ImagePicker _picker = ImagePicker();
   bool _isSubmitting = false;
+
+  String _t(String key) =>
+      AppLocalizations.translate(AppState.instance.languageCode.value, key);
+
   String? _selectedDistrict;
   String? _selectedTown;
   String? _selectedCategory;
@@ -642,53 +647,45 @@ class _AddPostPageState extends State<AddPostPage> {
   }
 
   Future<void> _submit() async {
-    final t = _titleCtl.text.trim();
-    final p = _priceCtl.text.trim();
-    final c = _contactCtl.text.trim();
-    if (t.isEmpty ||
-        p.isEmpty ||
-        c.isEmpty ||
+    final title = _titleCtl.text.trim();
+    final price = _priceCtl.text.trim();
+    final contact = _contactCtl.text.trim();
+    if (title.isEmpty ||
+        price.isEmpty ||
+        contact.isEmpty ||
         _selectedDistrict == null ||
         _selectedTown == null ||
         _selectedCategory == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+      ).showSnackBar(SnackBar(content: Text(_t('pleaseFillAllFields'))));
       return;
     }
 
     final isValidContact =
-        c.length == 10 &&
-        c.startsWith('0') &&
-        c.codeUnits.every((unit) => unit >= 48 && unit <= 57);
+        contact.length == 10 &&
+        contact.startsWith('0') &&
+        contact.codeUnits.every((unit) => unit >= 48 && unit <= 57);
     if (!isValidContact) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Contact number must start with 0 and contain exactly 10 digits.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('invalidContactNumber'))));
       return;
     }
 
     final currentUser = AppState.instance.currentUser.value;
     if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You must be logged in to add a post')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('mustBeLoggedIn'))));
       return;
     }
 
     final hasNetwork = await _hasNetworkConnection();
     if (!hasNetwork) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No internet connection. Please try again when you are online.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('noInternetConnection'))));
       return;
     }
 
@@ -700,20 +697,16 @@ class _AddPostPageState extends State<AddPostPage> {
       debugPrint('Image upload failed: $e\n$st');
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Unable to upload images. Check your connection and try again.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('unableUploadImages'))));
       return;
     }
 
     final newRoom = Room(
-      title: t,
-      price: p,
-      contact: c,
+      title: title,
+      price: price,
+      contact: contact,
       creatorEmail: AppState.instance.currentUserEmail,
       userId: AppState.instance.currentUserId,
       createdAt: widget.roomToEdit?.createdAt ?? DateTime.now(),
@@ -739,8 +732,8 @@ class _AddPostPageState extends State<AddPostPage> {
         SnackBar(
           content: Text(
             error == null || error.isEmpty
-                ? 'Unable to save the ad. Please check your internet connection and try again.'
-                : 'Unable to save the ad: $error',
+                ? _t('unableSaveAd')
+                : '${_t('unableSaveAd')} $error',
           ),
         ),
       );
@@ -749,7 +742,7 @@ class _AddPostPageState extends State<AddPostPage> {
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Your ad is under review')));
+    ).showSnackBar(SnackBar(content: Text(_t('yourAdUnderReview'))));
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
     Navigator.of(context).pop();
@@ -765,390 +758,408 @@ class _AddPostPageState extends State<AddPostPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.roomToEdit == null ? 'Create Ad' : 'Edit Ad'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blueAccent, Colors.lightBlueAccent],
-            stops: [0.0, 1.0],
+    final app = AppState.instance;
+    return ValueListenableBuilder<String>(
+      valueListenable: app.languageCode,
+      builder: (context, languageCode, child) {
+        String t(String key) => AppLocalizations.translate(languageCode, key);
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              widget.roomToEdit == null ? t('createAd') : t('editAd'),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            elevation: 0,
           ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (widget.roomToEdit?.status == 'rejected' &&
-                          widget.roomToEdit?.rejectionReason != null)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(14.0),
-                          margin: const EdgeInsets.only(bottom: 14.0),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Rejected reason',
-                                style: Theme.of(context).textTheme.bodyLarge
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red.shade900,
-                                    ),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.blueAccent, Colors.lightBlueAccent],
+                stops: [0.0, 1.0],
+              ),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (widget.roomToEdit?.status == 'rejected' &&
+                              widget.roomToEdit?.rejectionReason != null)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14.0),
+                              margin: const EdgeInsets.only(bottom: 14.0),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.red.shade200),
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                widget.roomToEdit!.rejectionReason!,
-                                style: Theme.of(context).textTheme.bodyMedium,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    t('rejectedReason'),
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.red.shade900,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    widget.roomToEdit!.rejectionReason!,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    t('updateAdPrompt'),
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: Colors.red.shade700),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Please update the ad and submit again.',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.red.shade700),
-                              ),
-                            ],
-                          ),
-                        ),
-                      TextField(
-                        controller: _titleCtl,
-                        decoration: const InputDecoration(
-                          labelText: 'Title',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _descCtl,
-                        decoration: const InputDecoration(
-                          labelText: 'Description',
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _priceCtl,
-                        decoration: const InputDecoration(
-                          labelText: 'Price (රු.)',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _contactCtl,
-                        decoration: const InputDecoration(
-                          labelText: 'Contact number',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        value: _selectedDistrict,
-                        decoration: const InputDecoration(
-                          labelText: 'District',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: _districtTowns.keys
-                            .map(
-                              (d) => DropdownMenuItem(value: d, child: Text(d)),
-                            )
-                            .toList(),
-                        onChanged: (v) {
-                          setState(() {
-                            _selectedDistrict = v;
-                            _selectedTown =
-                                null; // reset town when district changes
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        value: _selectedTown,
-                        decoration: const InputDecoration(
-                          labelText: 'Town',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: _selectedDistrict != null
-                            ? _districtTowns[_selectedDistrict]!
-                                  .map(
-                                    (t) => DropdownMenuItem(
-                                      value: t,
-                                      child: Text(t),
-                                    ),
-                                  )
-                                  .toList()
-                            : [],
-                        onChanged: _selectedDistrict == null
-                            ? null
-                            : (v) => setState(() => _selectedTown = v),
-                      ),
-                      const SizedBox(height: 12),
-                      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                        stream: FirebaseFirestore.instance
-                            .collection('categories')
-                            .orderBy('createdAt', descending: false)
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          final categories =
-                              snapshot.data?.docs
-                                  .map(
-                                    (doc) =>
-                                        doc.data()['name'] as String? ?? '',
-                                  )
-                                  .where((name) => name.isNotEmpty)
-                                  .toList() ??
-                              [];
-                          if (_selectedCategory != null &&
-                              !_selectedCategory!.isEmpty &&
-                              !categories.contains(_selectedCategory)) {
-                            categories.insert(0, _selectedCategory!);
-                          }
-
-                          return DropdownButtonFormField<String>(
-                            value: categories.contains(_selectedCategory)
-                                ? _selectedCategory
-                                : null,
-                            decoration: const InputDecoration(
-                              labelText: 'Category',
+                            ),
+                          TextField(
+                            controller: _titleCtl,
+                            decoration: InputDecoration(
+                              labelText: t('title'),
                               border: OutlineInputBorder(),
                             ),
-                            items: categories
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _descCtl,
+                            decoration: InputDecoration(
+                              labelText: t('description'),
+                              border: OutlineInputBorder(),
+                            ),
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _priceCtl,
+                            decoration: InputDecoration(
+                              labelText: t('priceLabel'),
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _contactCtl,
+                            decoration: InputDecoration(
+                              labelText: t('contactNumber'),
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: _selectedDistrict,
+                            decoration: InputDecoration(
+                              labelText: t('district'),
+                              border: OutlineInputBorder(),
+                            ),
+                            items: _districtTowns.keys
                                 .map(
-                                  (category) => DropdownMenuItem(
-                                    value: category,
-                                    child: Text(category),
+                                  (d) => DropdownMenuItem(
+                                    value: d,
+                                    child: Text(d),
                                   ),
                                 )
                                 .toList(),
-                            onChanged: categories.isEmpty
-                                ? null
-                                : (v) => setState(() => _selectedCategory = v),
-                            hint: Text(
-                              snapshot.connectionState ==
-                                      ConnectionState.waiting
-                                  ? 'Loading categories…'
-                                  : categories.isEmpty
-                                  ? 'No categories available'
-                                  : 'Select category',
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      if (_localImagePaths.isNotEmpty)
-                        SizedBox(
-                          height: 160,
-                          child: ReorderableListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            onReorder: (oldIndex, newIndex) {
+                            onChanged: (v) {
                               setState(() {
-                                if (newIndex > oldIndex) newIndex -= 1;
-                                final item = _localImagePaths.removeAt(
-                                  oldIndex,
-                                );
-                                _localImagePaths.insert(newIndex, item);
+                                _selectedDistrict = v;
+                                _selectedTown = null;
                               });
                             },
-                            itemCount: _localImagePaths.length,
-                            buildDefaultDragHandles: false,
-                            itemBuilder: (context, i) {
-                              final p = _localImagePaths[i];
-                              final imageWidget = p.startsWith('http')
-                                  ? Image.network(
-                                      p,
-                                      fit: BoxFit.cover,
-                                      loadingBuilder:
-                                          (context, child, loadingProgress) {
-                                            if (loadingProgress == null)
-                                              return child;
-                                            return const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            );
-                                          },
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return Container(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.surfaceVariant,
-                                              child: const Center(
-                                                child: Icon(Icons.broken_image),
-                                              ),
-                                            );
-                                          },
-                                    )
-                                  : Image.file(
-                                      File(p),
-                                      fit: BoxFit.cover,
-                                      cacheWidth: 400,
-                                      cacheHeight: 400,
-                                    );
-                              return ReorderableDelayedDragStartListener(
-                                key: ValueKey('$p-$i'),
-                                index: i,
-                                child: Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  width: 140,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Stack(
-                                      children: [
-                                        Positioned.fill(child: imageWidget),
-                                        Positioned(
-                                          top: 4,
-                                          right: 4,
-                                          child: CircleAvatar(
-                                            radius: 14,
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withOpacity(0.45),
-                                            child: IconButton(
-                                              padding: EdgeInsets.zero,
-                                              iconSize: 16,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
-                                              icon: const Icon(Icons.close),
-                                              onPressed: () => setState(
-                                                () => _localImagePaths.removeAt(
-                                                  i,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: _selectedTown,
+                            decoration: InputDecoration(
+                              labelText: t('town'),
+                              border: OutlineInputBorder(),
+                            ),
+                            items: _selectedDistrict != null
+                                ? _districtTowns[_selectedDistrict]!
+                                      .map(
+                                        (town) => DropdownMenuItem(
+                                          value: town,
+                                          child: Text(town),
                                         ),
-                                      ],
-                                    ),
-                                  ),
+                                      )
+                                      .toList()
+                                : [],
+                            onChanged: _selectedDistrict == null
+                                ? null
+                                : (v) => setState(() => _selectedTown = v),
+                          ),
+                          const SizedBox(height: 12),
+                          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                            stream: FirebaseFirestore.instance
+                                .collection('categories')
+                                .orderBy('createdAt', descending: false)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              final categories =
+                                  snapshot.data?.docs
+                                      .map(
+                                        (doc) =>
+                                            doc.data()['name'] as String? ?? '',
+                                      )
+                                      .where((name) => name.isNotEmpty)
+                                      .toList() ??
+                                  [];
+                              if (_selectedCategory != null &&
+                                  !_selectedCategory!.isEmpty &&
+                                  !categories.contains(_selectedCategory)) {
+                                categories.insert(0, _selectedCategory!);
+                              }
+
+                              return DropdownButtonFormField<String>(
+                                value: categories.contains(_selectedCategory)
+                                    ? _selectedCategory
+                                    : null,
+                                decoration: InputDecoration(
+                                  labelText: t('category'),
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: categories
+                                    .map(
+                                      (category) => DropdownMenuItem(
+                                        value: category,
+                                        child: Text(category),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: categories.isEmpty
+                                    ? null
+                                    : (v) =>
+                                          setState(() => _selectedCategory = v),
+                                hint: Text(
+                                  snapshot.connectionState ==
+                                          ConnectionState.waiting
+                                      ? t('loadingCategories')
+                                      : categories.isEmpty
+                                      ? t('noCategoriesAvailable')
+                                      : t('selectCategory'),
                                 ),
                               );
                             },
                           ),
-                        ),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 8,
-                        children: [
-                          PressableScale(
-                            child: ElevatedButton.icon(
-                              onPressed: _pickImages,
-                              icon: const Icon(Icons.photo_library),
-                              label: const Text('Gallery'),
-                            ),
-                          ),
-                          PressableScale(
-                            child: ElevatedButton.icon(
-                              onPressed: _captureImage,
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text('Camera'),
-                            ),
-                          ),
+                          const SizedBox(height: 12),
                           if (_localImagePaths.isNotEmpty)
-                            TextButton(
-                              onPressed: () =>
-                                  setState(() => _localImagePaths.clear()),
-                              child: const Text('Remove all'),
+                            SizedBox(
+                              height: 160,
+                              child: ReorderableListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                onReorder: (oldIndex, newIndex) {
+                                  setState(() {
+                                    if (newIndex > oldIndex) newIndex -= 1;
+                                    final item = _localImagePaths.removeAt(
+                                      oldIndex,
+                                    );
+                                    _localImagePaths.insert(newIndex, item);
+                                  });
+                                },
+                                itemCount: _localImagePaths.length,
+                                buildDefaultDragHandles: false,
+                                itemBuilder: (context, i) {
+                                  final p = _localImagePaths[i];
+                                  final imageWidget = p.startsWith('http')
+                                      ? Image.network(
+                                          p,
+                                          fit: BoxFit.cover,
+                                          loadingBuilder:
+                                              (
+                                                context,
+                                                child,
+                                                loadingProgress,
+                                              ) {
+                                                if (loadingProgress == null)
+                                                  return child;
+                                                return const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                );
+                                              },
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Container(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.surfaceVariant,
+                                                  child: const Center(
+                                                    child: Icon(
+                                                      Icons.broken_image,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                        )
+                                      : Image.file(
+                                          File(p),
+                                          fit: BoxFit.cover,
+                                          cacheWidth: 400,
+                                          cacheHeight: 400,
+                                        );
+                                  return ReorderableDelayedDragStartListener(
+                                    key: ValueKey('$p-$i'),
+                                    index: i,
+                                    child: Container(
+                                      margin: const EdgeInsets.only(right: 8),
+                                      width: 140,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: Stack(
+                                          children: [
+                                            Positioned.fill(child: imageWidget),
+                                            Positioned(
+                                              top: 4,
+                                              right: 4,
+                                              child: CircleAvatar(
+                                                radius: 14,
+                                                backgroundColor:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withOpacity(0.45),
+                                                child: IconButton(
+                                                  padding: EdgeInsets.zero,
+                                                  iconSize: 16,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                                  icon: const Icon(Icons.close),
+                                                  onPressed: () => setState(
+                                                    () => _localImagePaths
+                                                        .removeAt(i),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 8,
+                            children: [
+                              PressableScale(
+                                child: ElevatedButton.icon(
+                                  onPressed: _pickImages,
+                                  icon: const Icon(Icons.photo_library),
+                                  label: Text(t('gallery')),
+                                ),
+                              ),
+                              PressableScale(
+                                child: ElevatedButton.icon(
+                                  onPressed: _captureImage,
+                                  icon: const Icon(Icons.camera_alt),
+                                  label: Text(t('camera')),
+                                ),
+                              ),
+                              if (_localImagePaths.isNotEmpty)
+                                TextButton(
+                                  onPressed: () =>
+                                      setState(() => _localImagePaths.clear()),
+                                  child: Text(t('removeAll')),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: PressableScale(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                ),
+                                onPressed: _isSubmitting ? null : _submit,
+                                child: _isSubmitting
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(
+                                        widget.roomToEdit == null
+                                            ? t('post')
+                                            : t('update'),
+                                      ),
+                              ),
+                            ),
+                          ),
+                          if (widget.roomToEdit == null &&
+                              AppState.instance.isAnonymous)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16.0),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(14.0),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Text(
+                                  t('anonymousPostNote'),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                      ),
+                                ),
+                              ),
                             ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        child: PressableScale(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            onPressed: _isSubmitting ? null : _submit,
-                            child: _isSubmitting
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    widget.roomToEdit == null
-                                        ? 'Post'
-                                        : 'Update',
-                                  ),
-                          ),
-                        ),
-                      ),
-                      if (widget.roomToEdit == null &&
-                          AppState.instance.isAnonymous)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(14.0),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Text(
-                              'If you register before posting, you can edit, delete, pause, and keep track of your ads from My Ads.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface,
-                                  ),
-                            ),
-                          ),
-                        ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
-

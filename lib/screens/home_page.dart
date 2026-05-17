@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/app_state.dart';
+import '../services/localization.dart';
 import '../models/room.dart';
 import '../widgets/room_card.dart';
 import 'login_page.dart';
@@ -309,8 +310,12 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final app = AppState.instance;
 
-    return Scaffold(
-      appBar: AppBar(
+    return ValueListenableBuilder<String>(
+      valueListenable: app.languageCode,
+      builder: (context, languageCode, child) {
+        String t(String key) => AppLocalizations.translate(languageCode, key);
+        return Scaffold(
+          appBar: AppBar(
         title: Row(
           children: [
             Icon(
@@ -334,16 +339,36 @@ class _HomePageState extends State<HomePage> {
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         actions: [
-          TextButton.icon(
+          PopupMenuButton<String>(
+            tooltip: t('language'),
+            child: Text(
+              languageCode == 'si'
+                  ? t('sinhala')
+                  : languageCode == 'ta'
+                      ? t('tamil')
+                      : t('english'),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onSelected: (value) => AppState.instance.setLanguageCode(value),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'en', child: Text(t('english'))),
+              const PopupMenuItem(value: 'si', child: Text('සිංහල')),
+              const PopupMenuItem(value: 'ta', child: Text('தமிழ்')),
+            ],
+          ),
+          IconButton(
             onPressed: () async {
               if (AppState.instance.currentUser.value == null) {
                 final signed = await AppState.instance.signInAnonymously();
                 if (!signed) {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text(
-                        'Unable to start anonymous session. Please try again.',
+                        t('unableStartAnonymous'),
                       ),
                     ),
                   );
@@ -355,15 +380,9 @@ class _HomePageState extends State<HomePage> {
                 MaterialPageRoute(builder: (_) => const AddPostPage()),
               );
             },
-            icon: const Icon(Icons.add),
-            label: const Text('Create Ad'),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.primary,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-            ),
+            icon: const Icon(Icons.create),
+            tooltip: t('createAd'),
+            color: Theme.of(context).colorScheme.primary,
           ),
           ValueListenableBuilder(
             valueListenable: app.currentUser,
@@ -374,7 +393,7 @@ class _HomePageState extends State<HomePage> {
                     context,
                   ).push(MaterialPageRoute(builder: (_) => const LoginPage())),
                   icon: const Icon(Icons.login),
-                  label: const Text('Login'),
+                  label: Text(t('login')),
                   style: TextButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(
@@ -386,7 +405,11 @@ class _HomePageState extends State<HomePage> {
               } else {
                 return PopupMenuButton<int>(
                   onSelected: (v) {
-                    if (v == 1) {
+                    if (v == 10) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const AddPostPage()),
+                      );
+                    } else if (v == 1) {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const MyAdsPage()),
                       );
@@ -430,17 +453,18 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                     ),
-                    const PopupMenuItem(value: 1, child: Text('My Ads')),
-                    const PopupMenuItem(value: 2, child: Text('Profile')),
+                    PopupMenuItem(value: 10, child: Text(t('createAd'))),
+                    PopupMenuItem(value: 1, child: Text(t('myAds'))),
+                    PopupMenuItem(value: 2, child: Text(t('profile'))),
                     if (user.isAdmin) ...[
-                      const PopupMenuItem(value: 4, child: Text('Pending Ads')),
-                      const PopupMenuItem(
+                      PopupMenuItem(value: 4, child: Text(t('pendingAds'))),
+                      PopupMenuItem(
                         value: 5,
-                        child: Text('Reject Reasons'),
+                        child: Text(t('rejectReasons')),
                       ),
-                      const PopupMenuItem(value: 6, child: Text('Categories')),
+                      PopupMenuItem(value: 6, child: Text(t('categories'))),
                     ],
-                    const PopupMenuItem(value: 3, child: Text('Logout')),
+                    PopupMenuItem(value: 3, child: Text(t('logout'))),
                   ],
                   icon: Icon(
                     Icons.person,
@@ -614,7 +638,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Filters',
+                                    t('filters'),
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
@@ -622,7 +646,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   const Spacer(),
                                   IconButton(
-                                    tooltip: 'Clear filters',
+                                    tooltip: t('clearFilters'),
                                     icon: const Icon(Icons.clear),
                                     onPressed: () {
                                       setState(() {
@@ -638,8 +662,8 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   IconButton(
                                     tooltip: _filtersExpanded
-                                        ? 'Collapse filters'
-                                        : 'Expand filters',
+                                        ? t('collapseFilters')
+                                        : t('expandFilters'),
                                     icon: Icon(
                                       _filtersExpanded
                                           ? Icons.expand_less
@@ -678,7 +702,7 @@ class _HomePageState extends State<HomePage> {
                                                       ? _selectedDistrict
                                                       : null,
                                                   decoration: InputDecoration(
-                                                    labelText: 'District',
+                                                    labelText: t('district'),
                                                     prefixIcon: const Icon(
                                                       Icons.location_city,
                                                     ),
@@ -696,7 +720,10 @@ class _HomePageState extends State<HomePage> {
                                                   ),
                                                   items:
                                                       <String>[
-                                                            'All',
+                                                            AppLocalizations.translate(
+                                                              languageCode,
+                                                              'all',
+                                                            ),
                                                             ..._districts,
                                                           ]
                                                           .map(
@@ -705,7 +732,10 @@ class _HomePageState extends State<HomePage> {
                                                                   String
                                                                 >(
                                                                   value:
-                                                                      d == 'All'
+                                                                      d == AppLocalizations.translate(
+                                                                        languageCode,
+                                                                        'all',
+                                                                      )
                                                                       ? null
                                                                       : d,
                                                                   child: Text(
@@ -736,7 +766,7 @@ class _HomePageState extends State<HomePage> {
                                                       ? _selectedTown
                                                       : null,
                                                   decoration: InputDecoration(
-                                                    labelText: 'Town',
+                                                    labelText: t('town'),
                                                     prefixIcon: const Icon(
                                                       Icons.location_on,
                                                     ),
@@ -752,16 +782,25 @@ class _HomePageState extends State<HomePage> {
                                                           vertical: 6,
                                                         ),
                                                   ),
-                                                  disabledHint: const Text('Select district first'),
+                                                  disabledHint: Text(t('selectDistrictFirst')),
                                                   items:
-                                                      <String>['All', ..._availableTowns]
+                                                      <String>[
+                                                            AppLocalizations.translate(
+                                                              languageCode,
+                                                              'all',
+                                                            ),
+                                                            ..._availableTowns,
+                                                          ]
                                                           .map(
                                                             (t) =>
                                                                 DropdownMenuItem<
                                                                   String
                                                                 >(
                                                                   value:
-                                                                      t == 'All'
+                                                                      t == AppLocalizations.translate(
+                                                                        languageCode,
+                                                                        'all',
+                                                                      )
                                                                       ? null
                                                                       : t,
                                                                   child: Text(
@@ -794,7 +833,7 @@ class _HomePageState extends State<HomePage> {
                                                 ? _selectedCategory
                                                 : null,
                                             decoration: InputDecoration(
-                                              labelText: 'Category',
+                                              labelText: t('category'),
                                               prefixIcon: const Icon(
                                                 Icons.category,
                                               ),
@@ -809,13 +848,19 @@ class _HomePageState extends State<HomePage> {
                                                   ),
                                             ),
                                             items:
-                                                <String>['All', ..._categories]
+                                                <String>[
+                                                      AppLocalizations.translate(
+                                                        languageCode,
+                                                        'all',
+                                                      ),
+                                                      ..._categories,
+                                                    ]
                                                     .map(
                                                       (c) =>
                                                           DropdownMenuItem<
                                                             String
                                                           >(
-                                                            value: c == 'All'
+                                                            value: c == AppLocalizations.translate(languageCode, 'all')
                                                                 ? null
                                                                 : c,
                                                             child: Text(c),
@@ -943,7 +988,7 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        'Try adjusting your filters or check back later for new listings.',
+                                        t('noListingsMessage'),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium
@@ -962,7 +1007,7 @@ class _HomePageState extends State<HomePage> {
                                           });
                                         },
                                         icon: const Icon(Icons.refresh),
-                                        label: const Text('Clear Filters'),
+                                        label: Text(t('clearFilters')),
                                         style: ElevatedButton.styleFrom(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 24,
@@ -1109,5 +1154,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  },
+); 
   }
 }

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/room.dart';
@@ -19,6 +20,7 @@ class AppState {
   final ValueNotifier<bool> updateAvailable = ValueNotifier<bool>(false);
   final ValueNotifier<bool> forceUpdateRequired = ValueNotifier<bool>(false);
   final ValueNotifier<String?> updateUrl = ValueNotifier<String?>(null);
+  final ValueNotifier<String> languageCode = ValueNotifier<String>('en');
 
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,9 +31,11 @@ class AppState {
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _updateConfigSub;
   String? _packageName;
   String? _currentVersion;
+  static const String _languageKey = 'languageCode';
 
   Future<void> init() async {
     await _initPackageInfo();
+    _loadSavedLanguage();
     _authSub = _auth.authStateChanges().listen(_handleAuthStateChanged);
     _listenRooms();
     _listenUpdateConfig();
@@ -116,6 +120,19 @@ class AppState {
       _packageName = null;
       _currentVersion = null;
     }
+  }
+
+  void _loadSavedLanguage() {
+    final box = Hive.box('app');
+    final savedCode = box.get(_languageKey) as String?;
+    if (savedCode != null && savedCode.isNotEmpty) {
+      languageCode.value = savedCode;
+    }
+  }
+
+  void setLanguageCode(String code) {
+    languageCode.value = code;
+    Hive.box('app').put(_languageKey, code);
   }
 
   void _listenUpdateConfig() {
