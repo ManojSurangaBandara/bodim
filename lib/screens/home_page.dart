@@ -16,6 +16,7 @@ import 'my_ads_page.dart';
 import 'pending_ads_page.dart';
 import 'reject_reasons_page.dart';
 import 'profile_page.dart';
+import 'contact_us_page.dart';
 import '../theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -866,6 +867,12 @@ class _HomePageState extends State<HomePage> {
                                   builder: (_) => const CategoriesPage(),
                                 ),
                               );
+                            } else if (v == 7) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const ContactUsPage(),
+                                ),
+                              );
                             }
                           },
                           itemBuilder: (_) => [
@@ -930,6 +937,10 @@ class _HomePageState extends State<HomePage> {
                                 child: Text(t('categories')),
                               ),
                             ],
+                            PopupMenuItem(
+                              value: 7,
+                              child: Text(t('contactUs')),
+                            ),
                             PopupMenuItem(value: 3, child: Text(t('logout'))),
                           ],
                           icon: Icon(Icons.person, color: Colors.white),

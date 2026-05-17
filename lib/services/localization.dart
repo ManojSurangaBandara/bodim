@@ -97,6 +97,13 @@ class AppLocalizations {
       'pendingAds': 'Pending Ads',
       'rejectReasons': 'Reject Reasons',
       'categories': 'Categories',
+      'contactUs': 'Contact Us',
+      'contactUsSubtitle': 'Get in touch with us for any inquiries or support.',
+      'emailUs': 'Email',
+      'callUs': 'Phone',
+      'openEmail': 'Open email app',
+      'callAction': 'Call',
+      'copy': 'Copy',
       'noListingsMessage':
           'Try adjusting your filters or check back later for new listings.',
       'unableStartAnonymous':
@@ -216,6 +223,13 @@ class AppLocalizations {
       'pendingAds': 'පියවරේ ඇති දැන්වීම්',
       'rejectReasons': 'ප්‍රතික්ෂේපයේ හේතු',
       'categories': 'වර්ග',
+      'contactUs': 'අපව සම්බන්ධ කරගන්න',
+      'contactUsSubtitle': 'ඕනෑම ප්‍රශ්නයකට හෝ සහාය සඳහා අපව සම්බන්ධ කරගන්න.',
+      'emailUs': 'ඊමේල්',
+      'callUs': 'දුරකථනය',
+      'openEmail': 'ඊමේල් යෙදුම විවෘත කරන්න',
+      'callAction': 'ඇමතුම',
+      'copy': 'පිටපත් කරන්න',
       'noListingsMessage':
           'අදාළ දැන්වීම් නොලැබුණි. කරුණාකර පෙරහන් වෙනස් කරන්න හෝ පසුව නැවත බලන්න.',
       'unableStartAnonymous':
@@ -338,6 +352,13 @@ class AppLocalizations {
       'pendingAds': 'நிலுவையில் உள்ள விளம்பரங்கள்',
       'rejectReasons': 'நிராகரிப்பு காரணங்கள்',
       'categories': 'வகைகள்',
+      'contactUs': 'எங்களை தொடர்பு கொள்ளுங்கள்',
+      'contactUsSubtitle': 'ஏதேனும் கேள்விகள் அல்லது ஆதரவிற்கு எங்களை தொடர்பு கொள்ளுங்கள்.',
+      'emailUs': 'மின்னஞ்சல்',
+      'callUs': 'தொலைபேசி',
+      'openEmail': 'மின்னஞ்சல் பயன்பாட்டைத் திற',
+      'callAction': 'அழைப்பு',
+      'copy': 'நகலெடு',
       'noListingsMessage':
           'பொருந்தும் விளம்பரங்கள் இல்லை. உங்கள் வடிகட்டிகளை மாற்றவும் அல்லது பின்னர் மீண்டும் முயற்சிக்கவும்.',
       'unableStartAnonymous':
