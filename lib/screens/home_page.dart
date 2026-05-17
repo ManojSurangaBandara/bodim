@@ -727,7 +727,18 @@ class _HomePageState extends State<HomePage> {
               // Language selector (icon)
               PopupMenuButton<String>(
                 tooltip: t('language'),
-                icon: const Icon(Icons.translate_rounded, color: Colors.white),
+                icon: Text(
+                  languageCode == 'si'
+                      ? 'සිං'
+                      : languageCode == 'ta'
+                          ? 'த'
+                          : 'En',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 onSelected: (value) => AppState.instance.setLanguageCode(value),
                 itemBuilder: (_) => [
                   PopupMenuItem(value: 'en', child: Text(t('english'))),
