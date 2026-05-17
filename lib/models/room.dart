@@ -70,6 +70,8 @@ class Room extends HiveObject {
       createdAt = createdAtField.toDate();
     } else if (createdAtField is DateTime) {
       createdAt = createdAtField;
+    } else if (createdAtField is String) {
+      createdAt = DateTime.parse(createdAtField);
     }
 
     final statusValue = (map['status'] as String?)?.trim().toLowerCase();
@@ -101,7 +103,8 @@ class Room extends HiveObject {
       'description': description,
       'contact': contact,
       'creatorEmail': creatorEmail,
-      'createdAt': createdAt ?? FieldValue.serverTimestamp(),
+      'createdAt':
+          createdAt?.toUtc().toIso8601String() ?? FieldValue.serverTimestamp(),
       'district': district,
       'town': town,
       'category': category,

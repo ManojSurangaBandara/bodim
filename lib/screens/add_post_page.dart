@@ -710,7 +710,7 @@ class _AddPostPageState extends State<AddPostPage> {
       contact: contact,
       creatorEmail: AppState.instance.currentUserEmail,
       userId: AppState.instance.currentUserId,
-      createdAt: widget.roomToEdit?.createdAt ?? DateTime.now(),
+      createdAt: widget.roomToEdit?.createdAt ?? DateTime.now().toUtc(),
       images: imageUrls.isNotEmpty ? imageUrls : null,
       description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
       district: _selectedDistrict,
