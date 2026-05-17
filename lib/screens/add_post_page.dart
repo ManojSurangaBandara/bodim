@@ -764,12 +764,13 @@ class _AddPostPageState extends State<AddPostPage> {
       valueListenable: app.languageCode,
       builder: (context, languageCode, child) {
         String t(String key) => AppLocalizations.translate(languageCode, key);
+        final grad = Theme.of(context).extension<AppGradients>()!;
         return Scaffold(
           appBar: AppBar(
             title: Text(
               widget.roomToEdit == null ? t('createAd') : t('editAd'),
             ),
-            backgroundColor: AppTheme.gradientStart,
+            backgroundColor: grad.barBackground,
             foregroundColor: Colors.white,
             titleTextStyle: const TextStyle(
               color: Colors.white,
@@ -779,12 +780,12 @@ class _AddPostPageState extends State<AddPostPage> {
             elevation: 0,
           ),
           body: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
-                stops: [0.0, 1.0],
+                colors: [grad.bodyStart, grad.bodyEnd],
+                stops: const [0.0, 1.0],
               ),
             ),
             child: SingleChildScrollView(

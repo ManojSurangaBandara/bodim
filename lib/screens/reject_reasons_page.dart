@@ -67,6 +67,7 @@ class _RejectReasonsPageState extends State<RejectReasonsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final grad = Theme.of(context).extension<AppGradients>()!;
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -93,12 +94,12 @@ class _RejectReasonsPageState extends State<RejectReasonsPage> {
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
-            stops: [0.0, 1.0],
+            colors: [grad.bodyStart, grad.bodyEnd],
+            stops: const [0.0, 1.0],
           ),
         ),
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(

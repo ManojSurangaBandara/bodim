@@ -9,6 +9,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/room.dart';
 import '../models/user.dart';
+import '../theme.dart';
 
 class AppState {
   AppState._internal();
@@ -21,6 +22,8 @@ class AppState {
   final ValueNotifier<bool> forceUpdateRequired = ValueNotifier<bool>(false);
   final ValueNotifier<String?> updateUrl = ValueNotifier<String?>(null);
   final ValueNotifier<String> languageCode = ValueNotifier<String>('en');
+  final ValueNotifier<AppThemeMode> themeMode =
+      ValueNotifier<AppThemeMode>(AppThemeMode.light);
 
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -32,10 +35,12 @@ class AppState {
   String? _packageName;
   String? _currentVersion;
   static const String _languageKey = 'languageCode';
+  static const String _themeModeKey = 'themeMode';
 
   Future<void> init() async {
     await _initPackageInfo();
     _loadSavedLanguage();
+    _loadSavedThemeMode();
     _authSub = _auth.authStateChanges().listen(_handleAuthStateChanged);
     _listenRooms();
     _listenUpdateConfig();
@@ -133,6 +138,20 @@ class AppState {
   void setLanguageCode(String code) {
     languageCode.value = code;
     Hive.box('app').put(_languageKey, code);
+  }
+
+  void setThemeMode(AppThemeMode mode) {
+    themeMode.value = mode;
+    Hive.box('app').put(_themeModeKey, mode.index);
+  }
+
+  void _loadSavedThemeMode() {
+    final box = Hive.box('app');
+    final saved = box.get(_themeModeKey) as int?;
+    if (saved != null) {
+      themeMode.value =
+          AppThemeMode.values[saved.clamp(0, AppThemeMode.values.length - 1)];
+    }
   }
 
   void _listenUpdateConfig() {

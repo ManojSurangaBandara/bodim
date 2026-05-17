@@ -51,13 +51,14 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final grad = Theme.of(context).extension<AppGradients>()!;
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
+            colors: [grad.bodyStart, grad.bodyEnd],
           ),
         ),
         child: Center(

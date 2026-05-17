@@ -16,6 +16,7 @@ import 'my_ads_page.dart';
 import 'pending_ads_page.dart';
 import 'reject_reasons_page.dart';
 import 'profile_page.dart';
+import '../theme.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -305,6 +306,45 @@ class _HomePageState extends State<HomePage> {
     _updatePriceControllers();
   }
 
+  Color _themeColor(AppThemeMode mode) => switch (mode) {
+        AppThemeMode.violet => const Color(0xFF7C3AED),
+        AppThemeMode.light  => const Color(0xFF0EA5E9),
+        AppThemeMode.dark   => const Color(0xFF1F2937),
+      };
+
+  Widget _themeMenuItem(String label, Color color, bool isActive) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color,
+            border: Border.all(
+              color: isActive ? color : Colors.transparent,
+              width: 2.5,
+            ),
+            boxShadow: isActive
+                ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4)]
+                : null,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+          ),
+        ),
+        if (isActive) ...[
+          const Spacer(),
+          const Icon(Icons.check, size: 16),
+        ],
+      ],
+    );
+  }
+
   int get _activeFilterCount {
     int count = 0;
     if (_selectedDistrict != null && _selectedDistrict!.isNotEmpty) count++;
@@ -578,30 +618,77 @@ class _HomePageState extends State<HomePage> {
       valueListenable: app.languageCode,
       builder: (context, languageCode, child) {
         String t(String key) => AppLocalizations.translate(languageCode, key);
+        final grad = Theme.of(context).extension<AppGradients>()!;
+        final currentMode = AppState.instance.themeMode.value;
         return Scaffold(
           appBar: AppBar(
             title: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.home_work, color: Colors.white, size: 28),
-                const SizedBox(width: 10),
-                const Text(
-                  'බෝඩිම්.lk',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
+                const Icon(Icons.home_work, color: Colors.white, size: 26),
+                const SizedBox(width: 8),
+                const Flexible(
+                  child: Text(
+                    'බෝඩිම්.lk',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFF1E1B4B),
+            backgroundColor: grad.barBackground,
             foregroundColor: Colors.white,
             iconTheme: const IconThemeData(color: Colors.white),
             elevation: 0,
             shadowColor: Colors.transparent,
             surfaceTintColor: Colors.transparent,
             actions: [
+              // Theme switcher — single dot opens dropdown
+              PopupMenuButton<AppThemeMode>(
+                tooltip: 'Theme',
+                offset: const Offset(0, 44),
+                onSelected: (mode) => AppState.instance.setThemeMode(mode),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: AppThemeMode.violet,
+                    child: _themeMenuItem('Violet', const Color(0xFF7C3AED),
+                        currentMode == AppThemeMode.violet),
+                  ),
+                  PopupMenuItem(
+                    value: AppThemeMode.light,
+                    child: _themeMenuItem('Light', const Color(0xFF0EA5E9),
+                        currentMode == AppThemeMode.light),
+                  ),
+                  PopupMenuItem(
+                    value: AppThemeMode.dark,
+                    child: _themeMenuItem('Dark', const Color(0xFF1F2937),
+                        currentMode == AppThemeMode.dark),
+                  ),
+                ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _themeColor(currentMode),
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _themeColor(currentMode).withValues(alpha: 0.7),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               // Filter button with active-count badge
               Stack(
                 alignment: Alignment.center,
@@ -770,12 +857,12 @@ class _HomePageState extends State<HomePage> {
 
       // body: add location filter above the list
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1E1B4B), Color(0xFF4C1D95)],
-            stops: [0.0, 1.0],
+            colors: [grad.bodyStart, grad.bodyEnd],
+            stops: const [0.0, 1.0],
           ),
         ),
         child: Stack(

@@ -453,6 +453,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     return ValueListenableBuilder<String>(
       valueListenable: AppState.instance.languageCode,
       builder: (context, languageCode, __) {
+        final grad = Theme.of(context).extension<AppGradients>()!;
         return ValueListenableBuilder<List<Room>>(
           valueListenable: AppState.instance.rooms,
           builder: (context, rooms, _) {
@@ -472,7 +473,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         return Scaffold(
           appBar: AppBar(
             title: const Icon(Icons.home_work, size: 28),
-            backgroundColor: AppTheme.gradientStart,
+            backgroundColor: grad.barBackground,
             foregroundColor: Colors.white,
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
@@ -512,12 +513,12 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             ],
           ),
           body: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
-                stops: [0.0, 1.0],
+                colors: [grad.bodyStart, grad.bodyEnd],
+                stops: const [0.0, 1.0],
               ),
             ),
             child: SingleChildScrollView(

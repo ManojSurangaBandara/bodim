@@ -22,11 +22,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Room Renting',
-      theme: AppTheme.light(),
-      home: const HomePage(),
+    return ValueListenableBuilder<AppThemeMode>(
+      valueListenable: AppState.instance.themeMode,
+      builder: (context, mode, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Room Renting',
+          theme: AppTheme.forMode(mode),
+          home: const HomePage(),
+        );
+      },
     );
   }
 }

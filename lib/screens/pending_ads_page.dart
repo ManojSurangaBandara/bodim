@@ -174,6 +174,7 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final grad = Theme.of(context).extension<AppGradients>()!;
     final currentUser = AppState.instance.currentUser.value;
     return Scaffold(
       appBar: AppBar(
@@ -201,12 +202,12 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
-            stops: [0.0, 1.0],
+            colors: [grad.bodyStart, grad.bodyEnd],
+            stops: const [0.0, 1.0],
           ),
         ),
         child: ValueListenableBuilder<List>(
