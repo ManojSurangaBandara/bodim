@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/room.dart';
 import '../screens/room_detail_page.dart';
+import '../services/app_state.dart';
+import '../services/localization.dart';
 
 class RoomCard extends StatelessWidget {
   final Room room;
@@ -16,24 +18,60 @@ class RoomCard extends StatelessWidget {
     this.hideTitle = false,
   });
 
+  String _statusLabel(String status) {
+    final lang = AppState.instance.languageCode.value;
+    switch (status) {
+      case 'pending':
+        return AppLocalizations.translate(lang, 'statusPending');
+      case 'rejected':
+        return AppLocalizations.translate(lang, 'statusRejected');
+      case 'approved':
+        return AppLocalizations.translate(lang, 'statusApproved');
+      case 'paused':
+        return AppLocalizations.translate(lang, 'statusPaused');
+      default:
+        return status.toUpperCase();
+    }
+  }
+
   String _timeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
+    final languageCode = AppState.instance.languageCode.value;
 
     if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+      final count = difference.inDays;
+      return count == 1
+          ? AppLocalizations.translate(languageCode, 'dayAgo')
+          : AppLocalizations.translate(
+              languageCode,
+              'daysAgo',
+            ).replaceFirst('{count}', '$count');
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      final count = difference.inHours;
+      return count == 1
+          ? AppLocalizations.translate(languageCode, 'hourAgo')
+          : AppLocalizations.translate(
+              languageCode,
+              'hoursAgo',
+            ).replaceFirst('{count}', '$count');
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+      final count = difference.inMinutes;
+      return count == 1
+          ? AppLocalizations.translate(languageCode, 'minuteAgo')
+          : AppLocalizations.translate(
+              languageCode,
+              'minutesAgo',
+            ).replaceFirst('{count}', '$count');
     } else {
-      return 'Just now';
+      return AppLocalizations.translate(languageCode, 'justNow');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final heroBase = '${room.title}-${room.createdAt?.millisecondsSinceEpoch ?? room.price}';
+    final heroBase =
+        '${room.title}-${room.createdAt?.millisecondsSinceEpoch ?? room.price}';
 
     Widget imageWidget;
     if (room.images != null && room.images!.isNotEmpty) {
@@ -47,17 +85,29 @@ class RoomCard extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           },
           errorBuilder: (context, error, stackTrace) {
-            return Icon(Icons.broken_image, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant);
+            return Icon(
+              Icons.broken_image,
+              size: 40,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            );
           },
         );
       } else {
         final f = File(first);
         imageWidget = f.existsSync()
             ? Image.file(f, fit: BoxFit.cover)
-            : Icon(Icons.home, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant);
+            : Icon(
+                Icons.home,
+                size: 40,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              );
       }
     } else {
-      imageWidget = Icon(Icons.home, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant);
+      imageWidget = Icon(
+        Icons.home,
+        size: 40,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
     }
 
     return Card(
@@ -67,7 +117,9 @@ class RoomCard extends StatelessWidget {
           FocusManager.instance.primaryFocus?.unfocus();
           FocusScope.of(context).requestFocus(FocusNode());
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => RoomDetailPage(room: room)));
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => RoomDetailPage(room: room)),
+            );
           });
         },
         child: SizedBox(
@@ -86,14 +138,18 @@ class RoomCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (!hideTitle)
                         Text(
                           room.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -101,15 +157,23 @@ class RoomCard extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 6.0),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               room.category!,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     fontWeight: FontWeight.w700,
                                   ),
                             ),
@@ -119,7 +183,10 @@ class RoomCard extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 6.0),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: room.status == 'pending'
                                   ? Colors.orange.shade100
@@ -127,8 +194,9 @@ class RoomCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              room.status.toUpperCase(),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              _statusLabel(room.status),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     color: room.status == 'pending'
                                         ? Colors.orange.shade900
                                         : Colors.red.shade900,
@@ -137,22 +205,33 @@ class RoomCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                      if (room.status == 'rejected' && room.rejectionReason != null && room.rejectionReason!.isNotEmpty)
+                      if (room.status == 'rejected' &&
+                          room.rejectionReason != null &&
+                          room.rejectionReason!.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 6.0),
                           child: Text(
                             room.rejectionReason!,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.red.shade700),
                           ),
                         ),
-                      if (!hideDetailsOnPendingRejected && room.status != 'rejected') ...[
+                      if (!hideDetailsOnPendingRejected &&
+                          room.status != 'rejected') ...[
                         const SizedBox(height: 6),
-                        if ((room.town != null && room.town!.isNotEmpty) || (room.district != null && room.district!.isNotEmpty))
+                        if ((room.town != null && room.town!.isNotEmpty) ||
+                            (room.district != null &&
+                                room.district!.isNotEmpty))
                           Text(
                             '${room.town ?? ''}${(room.town != null && room.district != null) ? ', ' : ''}${room.district ?? ''}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                           ),
                         const Spacer(),
                         Row(
@@ -162,16 +241,22 @@ class RoomCard extends StatelessWidget {
                               children: [
                                 Text(
                                   'රු. ${room.price}',
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.primary,
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                         fontWeight: FontWeight.w700,
                                       ),
                                 ),
                                 if (room.createdAt != null)
                                   Text(
                                     _timeAgo(room.createdAt!),
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                         ),
                                   ),
                               ],
@@ -185,8 +270,11 @@ class RoomCard extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
-              )
+                child: Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),

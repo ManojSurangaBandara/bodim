@@ -47,6 +47,7 @@ class _HomePageState extends State<HomePage> {
   List<int> _priceList = [];
   int _minPrice = 0;
   int _maxPrice = 0;
+  // ignore: unused_field
   RangeValues? _effectivePriceRange;
 
   @override

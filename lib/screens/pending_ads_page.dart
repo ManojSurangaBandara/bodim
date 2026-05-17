@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../models/room.dart';
 import '../services/app_state.dart';
 import '../theme.dart';
-import 'reject_reasons_page.dart';
 
 class PendingAdsPage extends StatefulWidget {
   const PendingAdsPage({super.key});

@@ -32,6 +32,7 @@ class AppState {
   StreamSubscription<fb_auth.User?>? _authSub;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _profileSub;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _updateConfigSub;
+  // ignore: unused_field
   String? _packageName;
   String? _currentVersion;
   static const String _languageKey = 'languageCode';
