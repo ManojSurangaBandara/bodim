@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../theme.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -86,7 +87,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
             ),
           ],
         ),
-        backgroundColor: Colors.white.withOpacity(0.9),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -94,9 +95,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
             stops: [0.0, 1.0],
           ),
         ),

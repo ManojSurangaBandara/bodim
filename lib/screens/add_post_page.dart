@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../widgets/pressable_scale.dart';
+import '../theme.dart';
 
 import '../models/room.dart';
 import '../services/app_state.dart';
@@ -768,16 +769,21 @@ class _AddPostPageState extends State<AddPostPage> {
             title: Text(
               widget.roomToEdit == null ? t('createAd') : t('editAd'),
             ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            backgroundColor: AppTheme.gradientStart,
+            foregroundColor: Colors.white,
+            titleTextStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
             elevation: 0,
           ),
           body: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.blueAccent, Colors.lightBlueAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
                 stops: [0.0, 1.0],
               ),
             ),

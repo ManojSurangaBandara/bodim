@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/app_state.dart';
+import '../theme.dart';
 import 'register_page.dart';
 import '../widgets/pressable_scale.dart';
 
@@ -54,9 +55,9 @@ class _LoginPageState extends State<LoginPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blueAccent, Colors.lightBlueAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
           ),
         ),
         child: Center(
@@ -72,12 +73,13 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'බෝඩිම්.lk',
                       style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.brandColor,
+                        letterSpacing: 1,
                       ),
                     ),
                     const SizedBox(height: 8),

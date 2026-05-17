@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/app_state.dart';
 import '../screens/add_post_page.dart';
 import '../widgets/room_card.dart';
+import '../theme.dart';
 
 class MyAdsPage extends StatelessWidget {
   const MyAdsPage({super.key});
@@ -28,7 +29,7 @@ class MyAdsPage extends StatelessWidget {
             ),
           ],
         ),
-        backgroundColor: Colors.white.withOpacity(0.9),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -45,9 +46,9 @@ class MyAdsPage extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blueAccent, Colors.lightBlueAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
             stops: [0.0, 1.0],
           ),
         ),

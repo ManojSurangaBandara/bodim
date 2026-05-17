@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/room.dart';
 import '../services/app_state.dart';
+import '../theme.dart';
 import 'reject_reasons_page.dart';
 
 class PendingAdsPage extends StatefulWidget {
@@ -194,7 +195,7 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
             ),
           ],
         ),
-        backgroundColor: Colors.white.withOpacity(0.9),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -202,9 +203,9 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
             stops: [0.0, 1.0],
           ),
         ),
@@ -393,10 +394,10 @@ class _PendingAdsPageState extends State<PendingAdsPage> {
                                 Expanded(
                                   child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green.shade600,
+                                      backgroundColor: const Color(0xFF16A34A),
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
                                     onPressed: isProcessing

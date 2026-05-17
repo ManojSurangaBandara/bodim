@@ -9,6 +9,7 @@ import '../services/app_state.dart';
 import '../services/localization.dart';
 import 'add_post_page.dart';
 import '../widgets/pressable_scale.dart';
+import '../theme.dart';
 
 class RoomDetailPage extends StatefulWidget {
   final Room room;
@@ -471,8 +472,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         return Scaffold(
           appBar: AppBar(
             title: const Icon(Icons.home_work, size: 28),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            backgroundColor: AppTheme.gradientStart,
+            foregroundColor: Colors.white,
+            iconTheme: const IconThemeData(color: Colors.white),
             actions: [
               if (canPause &&
                   (room.status == 'approved' || room.status == 'paused'))
@@ -512,9 +514,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           body: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.blueAccent, Colors.lightBlueAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
                 stops: [0.0, 1.0],
               ),
             ),
@@ -770,11 +772,11 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                       label: Text(_t('call')),
                                       style: ElevatedButton.styleFrom(
                                         minimumSize: const Size.fromHeight(50),
-                                        backgroundColor: Colors.green,
+                                        backgroundColor: const Color(0xFF16A34A),
                                         foregroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            14,
                                           ),
                                         ),
                                       ),
@@ -790,13 +792,14 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                       label: Text(_t('sms')),
                                       style: OutlinedButton.styleFrom(
                                         minimumSize: const Size.fromHeight(50),
-                                        side: BorderSide(
-                                          color: Colors.blue.shade600,
+                                        side: const BorderSide(
+                                          color: Color(0xFF7C3AED),
+                                          width: 1.5,
                                         ),
-                                        foregroundColor: Colors.blue.shade700,
+                                        foregroundColor: const Color(0xFF7C3AED),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            14,
                                           ),
                                         ),
                                       ),
@@ -817,12 +820,13 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                 label: Text(_t('whatsapp')),
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(50),
-                                  side: BorderSide(
-                                    color: Colors.green.shade600,
+                                  side: const BorderSide(
+                                    color: Color(0xFF16A34A),
+                                    width: 1.5,
                                   ),
-                                  foregroundColor: Colors.green.shade700,
+                                  foregroundColor: const Color(0xFF15803D),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
                               ),
