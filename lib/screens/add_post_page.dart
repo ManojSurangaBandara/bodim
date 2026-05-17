@@ -49,8 +49,14 @@ class _AddPostPageState extends State<AddPostPage> {
       _descCtl.text = room.description ?? '';
       _contactCtl.text = room.contact ?? '';
       _localImagePaths.addAll(room.images ?? []);
-      _selectedDistrict = room.district;
-      _selectedTown = room.town;
+      _selectedDistrict = _districtTowns.containsKey(room.district)
+          ? room.district
+          : null;
+      _selectedTown =
+          _selectedDistrict != null &&
+              _districtTowns[_selectedDistrict]!.contains(room.town)
+          ? room.town
+          : null;
       _selectedCategory = room.category;
     }
   }
@@ -708,15 +714,16 @@ class _AddPostPageState extends State<AddPostPage> {
       title: title,
       price: price,
       contact: contact,
-      creatorEmail: AppState.instance.currentUserEmail,
-      userId: AppState.instance.currentUserId,
+      creatorEmail:
+          widget.roomToEdit?.creatorEmail ?? AppState.instance.currentUserEmail,
+      userId: widget.roomToEdit?.userId ?? AppState.instance.currentUserId,
       createdAt: widget.roomToEdit?.createdAt ?? DateTime.now().toUtc(),
       images: imageUrls.isNotEmpty ? imageUrls : null,
       description: _descCtl.text.trim().isEmpty ? null : _descCtl.text.trim(),
       district: _selectedDistrict,
       town: _selectedTown,
       category: _selectedCategory,
-      status: 'pending',
+      status: widget.roomToEdit?.status ?? 'pending',
       id: widget.roomToEdit?.id,
     );
 
@@ -765,6 +772,15 @@ class _AddPostPageState extends State<AddPostPage> {
       builder: (context, languageCode, child) {
         String t(String key) => AppLocalizations.translate(languageCode, key);
         final grad = Theme.of(context).extension<AppGradients>()!;
+        final selectedDistrict = _districtTowns.containsKey(_selectedDistrict)
+            ? _selectedDistrict
+            : null;
+        final townChoices = selectedDistrict != null
+            ? _districtTowns[selectedDistrict]!
+            : <String>[];
+        final selectedTown = townChoices.contains(_selectedTown)
+            ? _selectedTown
+            : null;
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -878,7 +894,7 @@ class _AddPostPageState extends State<AddPostPage> {
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            value: _selectedDistrict,
+                            value: selectedDistrict,
                             decoration: InputDecoration(
                               labelText: t('district'),
                               border: OutlineInputBorder(),
@@ -900,22 +916,20 @@ class _AddPostPageState extends State<AddPostPage> {
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            value: _selectedTown,
+                            value: selectedTown,
                             decoration: InputDecoration(
                               labelText: t('town'),
                               border: OutlineInputBorder(),
                             ),
-                            items: _selectedDistrict != null
-                                ? _districtTowns[_selectedDistrict]!
-                                      .map(
-                                        (town) => DropdownMenuItem(
-                                          value: town,
-                                          child: Text(town),
-                                        ),
-                                      )
-                                      .toList()
-                                : [],
-                            onChanged: _selectedDistrict == null
+                            items: townChoices
+                                .map(
+                                  (town) => DropdownMenuItem(
+                                    value: town,
+                                    child: Text(town),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: selectedDistrict == null
                                 ? null
                                 : (v) => setState(() => _selectedTown = v),
                           ),

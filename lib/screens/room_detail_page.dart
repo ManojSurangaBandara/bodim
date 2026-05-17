@@ -73,11 +73,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched) {
       await Clipboard.setData(ClipboardData(text: sanitized));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_t('couldNotOpenDialer')),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('couldNotOpenDialer'))));
     }
   }
 
@@ -88,11 +86,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched) {
       await Clipboard.setData(ClipboardData(text: sanitized));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_t('couldNotOpenMessagingApp')),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_t('couldNotOpenMessagingApp'))));
     }
   }
 
@@ -149,11 +145,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     }
 
     print('All attempts failed, showing SnackBar');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_t('couldNotOpenWhatsApp')),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(_t('couldNotOpenWhatsApp'))));
   }
 
   Future<void> _deleteRoom() async {
@@ -249,9 +243,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         'rejectionReason': reason,
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(parentContext).showSnackBar(
-        SnackBar(content: Text(_t('adRejectedSuccessfully'))),
-      );
+      ScaffoldMessenger.of(
+        parentContext,
+      ).showSnackBar(SnackBar(content: Text(_t('adRejectedSuccessfully'))));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -278,11 +272,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           contentTextStyle: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
-          title: Text(
-            actionLabel == 'Resume'
-                ? _t('resumeAd')
-                : _t('pauseAd'),
-          ),
+          title: Text(actionLabel == 'Resume' ? _t('resumeAd') : _t('pauseAd')),
           content: Text(
             actionLabel == 'Resume'
                 ? _t('resumeAdPrompt')
@@ -319,18 +309,20 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(parentContext).showSnackBar(
         SnackBar(
-          content: Text(isPaused
-              ? _t('adResumedSuccessfully')
-              : _t('adPausedSuccessfully')),
+          content: Text(
+            isPaused ? _t('adResumedSuccessfully') : _t('adPausedSuccessfully'),
+          ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(parentContext).showSnackBar(
         SnackBar(
-          content: Text(isPaused
-              ? '${_t('failedToResumeAd')} $e'
-              : '${_t('failedToPauseAd')} $e'),
+          content: Text(
+            isPaused
+                ? '${_t('failedToResumeAd')} $e'
+                : '${_t('failedToPauseAd')} $e',
+          ),
         ),
       );
     }
@@ -457,396 +449,424 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         return ValueListenableBuilder<List<Room>>(
           valueListenable: AppState.instance.rooms,
           builder: (context, rooms, _) {
-        final room = rooms.firstWhere(
-          (r) => r.id == widget.room.id,
-          orElse: () => widget.room,
-        );
-        final images = room.images ?? [];
-        final currentUser = AppState.instance.currentUser.value;
-        final canDelete =
-            currentUser != null && room.creatorEmail == currentUser.email;
-        final canAdminReject = currentUser != null && currentUser.isAdmin;
-        final canPause =
-            currentUser != null &&
-            (room.creatorEmail == currentUser.email || currentUser.isAdmin);
+            final room = rooms.firstWhere(
+              (r) => r.id == widget.room.id,
+              orElse: () => widget.room,
+            );
+            final images = room.images ?? [];
+            final currentUser = AppState.instance.currentUser.value;
+            final currentUserId = AppState.instance.currentUserId;
+            final canDelete = currentUser != null &&
+                (currentUser.isAdmin ||
+                    (room.userId != null && room.userId == currentUserId) ||
+                    room.creatorEmail == currentUser.email);
+            final canAdminReject = currentUser != null && currentUser.isAdmin;
+            final canPause = currentUser != null &&
+                (currentUser.isAdmin ||
+                    (room.userId != null && room.userId == currentUserId) ||
+                    room.creatorEmail == currentUser.email);
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Icon(Icons.home_work, size: 28),
-            backgroundColor: grad.barBackground,
-            foregroundColor: Colors.white,
-            iconTheme: const IconThemeData(color: Colors.white),
-            actions: [
-              if (canPause &&
-                  (room.status == 'approved' || room.status == 'paused'))
-                IconButton(
-                  icon: Icon(
-                    room.status == 'paused' ? Icons.play_arrow : Icons.pause,
-                  ),
-                  tooltip: room.status == 'paused'
-                      ? _t('resumeAd')
-                      : _t('pauseAd'),
-                  onPressed: () => _togglePauseRoom(room),
-                ),
-              if (canAdminReject)
-                IconButton(
-                  icon: const Icon(Icons.block),
-                  tooltip: _t('rejectAd'),
-                  onPressed: room.status == 'rejected'
-                      ? null
-                      : () => _rejectRoom(room),
-                ),
-              if (canDelete) ...[
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AddPostPage(roomToEdit: room),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: _deleteRoom,
-                ),
-              ],
-            ],
-          ),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [grad.bodyStart, grad.bodyEnd],
-                stops: const [0.0, 1.0],
-              ),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Image carousel
-                  if (images.isNotEmpty)
-                    Container(
-                      height: 250,
-                      margin: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+            return Scaffold(
+              appBar: AppBar(
+                title: const Icon(Icons.home_work, size: 28),
+                backgroundColor: grad.barBackground,
+                foregroundColor: Colors.white,
+                iconTheme: const IconThemeData(color: Colors.white),
+                actions: [
+                  if (canPause &&
+                      (room.status == 'approved' || room.status == 'paused'))
+                    IconButton(
+                      icon: Icon(
+                        room.status == 'paused'
+                            ? Icons.play_arrow
+                            : Icons.pause,
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            PageView.builder(
-                              itemCount: images.length,
-                              onPageChanged: (index) =>
-                                  setState(() => _page = index),
-                              itemBuilder: (context, index) {
-                                final image = images[index];
-                                Widget content = image.startsWith('http')
-                                    ? Image.network(
-                                        image,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return Container(
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.surfaceVariant,
-                                                child: const Center(
-                                                  child: Icon(
-                                                    Icons.broken_image,
-                                                    size: 48,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                      )
-                                    : Image.file(
-                                        File(image),
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return Container(
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.surfaceVariant,
-                                                child: const Center(
-                                                  child: Icon(
-                                                    Icons.broken_image,
-                                                    size: 48,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                      );
-
-                                return GestureDetector(
-                                  onTap: () => _openFullScreen(index),
-                                  child: content,
-                                );
-                              },
-                            ),
-                            Positioned(
-                              bottom: 12,
-                              left: 0,
-                              right: 0,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(images.length, (index) {
-                                  return Container(
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                    ),
-                                    width: _page == index ? 12 : 8,
-                                    height: _page == index ? 12 : 8,
-                                    decoration: BoxDecoration(
-                                      color: _page == index
-                                          ? Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimary
-                                          : Theme.of(context)
-                                                .colorScheme
-                                                .onPrimary
-                                                .withOpacity(0.6),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  );
-                                }),
-                              ),
-                            ),
-                          ],
+                      tooltip: room.status == 'paused'
+                          ? _t('resumeAd')
+                          : _t('pauseAd'),
+                      onPressed: () => _togglePauseRoom(room),
+                    ),
+                  if (canAdminReject)
+                    IconButton(
+                      icon: const Icon(Icons.block),
+                      tooltip: _t('rejectAd'),
+                      onPressed: room.status == 'rejected'
+                          ? null
+                          : () => _rejectRoom(room),
+                    ),
+                  if (canDelete) ...[
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AddPostPage(roomToEdit: room),
                         ),
                       ),
                     ),
-
-                  // Room details card
-                  Card(
-                    margin: const EdgeInsets.all(16),
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: _deleteRoom,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Title
-                          Text(
-                            room.title,
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Price
-                          Text(
-                            'රු. ${room.price}',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Description
-                          if (room.description != null &&
-                              room.description!.isNotEmpty)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _t('description'),
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  room.description!,
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-                            ),
-
-                          // Location
-                          if (room.district != null && room.town != null)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _t('location'),
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '${room.town}, ${room.district}',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-                            ),
-
-                          if (room.category != null && room.category!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Chip(
-                                label: Text(
-                                  room.category!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
-                                ),
-                              ),
-                            ),
-
-                          // Posted time
-                          if (room.createdAt != null)
-                            Text(
-                              '${_t('posted')}: ${_formatDateTime(room.createdAt!)}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Contact buttons
-                  if (room.contact != null && room.contact!.isNotEmpty)
-                    Card(
-                      margin: const EdgeInsets.all(16),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _t('contact'),
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: PressableScale(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () => _call(room.contact!),
-                                      icon: const Icon(Icons.call),
-                                      label: Text(_t('call')),
-                                      style: ElevatedButton.styleFrom(
-                                        minimumSize: const Size.fromHeight(50),
-                                        backgroundColor: const Color(0xFF16A34A),
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: PressableScale(
-                                    child: OutlinedButton.icon(
-                                      onPressed: () => _sms(room.contact!),
-                                      icon: const Icon(Icons.message),
-                                      label: Text(_t('sms')),
-                                      style: OutlinedButton.styleFrom(
-                                        minimumSize: const Size.fromHeight(50),
-                                        side: const BorderSide(
-                                          color: Color(0xFF7C3AED),
-                                          width: 1.5,
-                                        ),
-                                        foregroundColor: const Color(0xFF7C3AED),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            PressableScale(
-                              child: OutlinedButton.icon(
-                                onPressed:
-                                    room.contact == null ||
-                                        room.contact!.isNotEmpty
-                                    ? () => _whatsapp(room.contact!)
-                                    : null,
-                                icon: const Icon(Icons.chat),
-                                label: Text(_t('whatsapp')),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(50),
-                                  side: const BorderSide(
-                                    color: Color(0xFF16A34A),
-                                    width: 1.5,
-                                  ),
-                                  foregroundColor: const Color(0xFF15803D),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 16),
+                  ],
                 ],
               ),
-            ),
-          ),
+              body: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [grad.bodyStart, grad.bodyEnd],
+                    stops: const [0.0, 1.0],
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Image carousel
+                      if (images.isNotEmpty)
+                        Container(
+                          height: 250,
+                          margin: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                PageView.builder(
+                                  itemCount: images.length,
+                                  onPageChanged: (index) =>
+                                      setState(() => _page = index),
+                                  itemBuilder: (context, index) {
+                                    final image = images[index];
+                                    Widget content = image.startsWith('http')
+                                        ? Image.network(
+                                            image,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return Container(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceVariant,
+                                                    child: const Center(
+                                                      child: Icon(
+                                                        Icons.broken_image,
+                                                        size: 48,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                          )
+                                        : Image.file(
+                                            File(image),
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return Container(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceVariant,
+                                                    child: const Center(
+                                                      child: Icon(
+                                                        Icons.broken_image,
+                                                        size: 48,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                          );
+
+                                    return GestureDetector(
+                                      onTap: () => _openFullScreen(index),
+                                      child: content,
+                                    );
+                                  },
+                                ),
+                                Positioned(
+                                  bottom: 12,
+                                  left: 0,
+                                  right: 0,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: List.generate(images.length, (
+                                      index,
+                                    ) {
+                                      return Container(
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
+                                        width: _page == index ? 12 : 8,
+                                        height: _page == index ? 12 : 8,
+                                        decoration: BoxDecoration(
+                                          color: _page == index
+                                              ? Theme.of(
+                                                  context,
+                                                ).colorScheme.onPrimary
+                                              : Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary
+                                                    .withOpacity(0.6),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      );
+                                    }),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Room details card
+                      Card(
+                        margin: const EdgeInsets.all(16),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Title
+                              Text(
+                                room.title,
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Price
+                              Text(
+                                'රු. ${room.price}',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Description
+                              if (room.description != null &&
+                                  room.description!.isNotEmpty)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _t('description'),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      room.description!,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                ),
+
+                              // Location
+                              if (room.district != null && room.town != null)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _t('location'),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '${room.town}, ${room.district}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                ),
+
+                              if (room.category != null &&
+                                  room.category!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: Chip(
+                                    label: Text(
+                                      room.category!,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                  ),
+                                ),
+
+                              // Posted time
+                              if (room.createdAt != null)
+                                Text(
+                                  '${_t('posted')}: ${_formatDateTime(room.createdAt!)}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Contact buttons
+                      if (room.contact != null && room.contact!.isNotEmpty)
+                        Card(
+                          margin: const EdgeInsets.all(16),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _t('contact'),
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: PressableScale(
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => _call(room.contact!),
+                                          icon: const Icon(Icons.call),
+                                          label: Text(_t('call')),
+                                          style: ElevatedButton.styleFrom(
+                                            minimumSize: const Size.fromHeight(
+                                              50,
+                                            ),
+                                            backgroundColor: const Color(
+                                              0xFF16A34A,
+                                            ),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: PressableScale(
+                                        child: OutlinedButton.icon(
+                                          onPressed: () => _sms(room.contact!),
+                                          icon: const Icon(Icons.message),
+                                          label: Text(_t('sms')),
+                                          style: OutlinedButton.styleFrom(
+                                            minimumSize: const Size.fromHeight(
+                                              50,
+                                            ),
+                                            side: const BorderSide(
+                                              color: Color(0xFF7C3AED),
+                                              width: 1.5,
+                                            ),
+                                            foregroundColor: const Color(
+                                              0xFF7C3AED,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                PressableScale(
+                                  child: OutlinedButton.icon(
+                                    onPressed:
+                                        room.contact == null ||
+                                            room.contact!.isNotEmpty
+                                        ? () => _whatsapp(room.contact!)
+                                        : null,
+                                    icon: const Icon(Icons.chat),
+                                    label: Text(_t('whatsapp')),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size.fromHeight(50),
+                                      side: const BorderSide(
+                                        color: Color(0xFF16A34A),
+                                        width: 1.5,
+                                      ),
+                                      foregroundColor: const Color(0xFF15803D),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
-  },
-);
   }
 }
 

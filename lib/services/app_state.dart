@@ -22,8 +22,9 @@ class AppState {
   final ValueNotifier<bool> forceUpdateRequired = ValueNotifier<bool>(false);
   final ValueNotifier<String?> updateUrl = ValueNotifier<String?>(null);
   final ValueNotifier<String> languageCode = ValueNotifier<String>('en');
-  final ValueNotifier<AppThemeMode> themeMode =
-      ValueNotifier<AppThemeMode>(AppThemeMode.light);
+  final ValueNotifier<AppThemeMode> themeMode = ValueNotifier<AppThemeMode>(
+    AppThemeMode.light,
+  );
 
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -303,9 +304,12 @@ class AppState {
     }
     final userId = authUser.uid;
     final userEmail = authUser.email;
-    final canDelete = room.userId != null
-        ? room.userId == userId
-        : room.creatorEmail == userEmail;
+    final isAdmin = currentUser.value?.isAdmin ?? false;
+    final canDelete =
+        isAdmin ||
+        (room.userId != null
+            ? room.userId == userId
+            : room.creatorEmail == userEmail);
     if (!canDelete) return false;
     try {
       lastRoomError = null;
@@ -347,9 +351,12 @@ class AppState {
     }
     final userId = authUser.uid;
     final userEmail = authUser.email;
-    final canUpdate = oldRoom.userId != null
-        ? oldRoom.userId == userId
-        : oldRoom.creatorEmail == userEmail;
+    final isAdmin = currentUser.value?.isAdmin ?? false;
+    final canUpdate =
+        isAdmin ||
+        (oldRoom.userId != null
+            ? oldRoom.userId == userId
+            : oldRoom.creatorEmail == userEmail);
     if (!canUpdate) return false;
 
     try {
