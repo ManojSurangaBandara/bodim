@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/room.dart';
@@ -47,6 +49,7 @@ class AppState {
     _listenRooms();
     _listenUpdateConfig();
     await _ensureSignedIn();
+    await _checkForInAppUpdate();
   }
 
   Future<void> _ensureSignedIn() async {
@@ -126,6 +129,26 @@ class AppState {
     } catch (_) {
       _packageName = null;
       _currentVersion = null;
+    }
+  }
+
+  Future<void> _checkForInAppUpdate() async {
+    if (!Platform.isAndroid) return;
+
+    try {
+      final appUpdateInfo = await InAppUpdate.checkForUpdate();
+      if (appUpdateInfo.updateAvailability ==
+          UpdateAvailability.updateAvailable) {
+        updateAvailable.value = true;
+        if (appUpdateInfo.immediateUpdateAllowed) {
+          await InAppUpdate.performImmediateUpdate();
+        } else if (appUpdateInfo.flexibleUpdateAllowed) {
+          await InAppUpdate.startFlexibleUpdate();
+          await InAppUpdate.completeFlexibleUpdate();
+        }
+      }
+    } catch (e, stack) {
+      debugPrint('Failed to check in-app update: $e\n$stack');
     }
   }
 
