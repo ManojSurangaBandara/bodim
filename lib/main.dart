@@ -29,9 +29,40 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Room Renting',
           theme: AppTheme.forMode(mode),
-          home: const HomePage(),
+          home: const SplashPage(),
         );
       },
+    );
+  }
+}
+
+class SplashPage extends StatefulWidget {
+  const SplashPage({super.key});
+
+  @override
+  State<SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (!mounted) return;
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        color: Colors.white,
+        alignment: Alignment.center,
+        child: Image.asset('assets/icon/app_icon.png', width: 180, height: 180),
+      ),
     );
   }
 }
