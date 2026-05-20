@@ -50,6 +50,8 @@ class _HomePageState extends State<HomePage> {
   int _maxPrice = 0;
   // ignore: unused_field
   RangeValues? _effectivePriceRange;
+  final ScrollController _scrollController = ScrollController();
+  bool _showGoToTop = false;
 
   @override
   void initState() {
@@ -60,6 +62,14 @@ class _HomePageState extends State<HomePage> {
       (_) => _checkConnectivity(),
     );
     AppState.instance.rooms.addListener(_onRoomsChanged);
+    _scrollController.addListener(() {
+      final shouldShow = _scrollController.offset > 120;
+      if (shouldShow != _showGoToTop) {
+        setState(() {
+          _showGoToTop = shouldShow;
+        });
+      }
+    });
     // Process rooms already available (e.g. after navigation or hot reload)
     final initialRooms = AppState.instance.rooms.value.cast<Room>();
     if (initialRooms.isNotEmpty) {
@@ -74,6 +84,7 @@ class _HomePageState extends State<HomePage> {
     AppState.instance.rooms.removeListener(_onRoomsChanged);
     _minPriceController.dispose();
     _maxPriceController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -155,6 +166,14 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _loadedRoomsCount = _pageSize;
     });
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOut,
+    );
   }
 
   void _precacheRoomThumbnails(List<Room> rooms) {
@@ -646,6 +665,14 @@ class _HomePageState extends State<HomePage> {
         final grad = Theme.of(context).extension<AppGradients>()!;
         final currentMode = AppState.instance.themeMode.value;
         return Scaffold(
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          floatingActionButton: _showGoToTop
+              ? FloatingActionButton(
+                  onPressed: _scrollToTop,
+                  tooltip: 'Go to top',
+                  child: const Icon(Icons.arrow_upward),
+                )
+              : null,
           appBar: AppBar(
             title: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1265,6 +1292,7 @@ class _HomePageState extends State<HomePage> {
                                     return false;
                                   },
                                   child: ListView.builder(
+                                    controller: _scrollController,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
                                       vertical: 2,
