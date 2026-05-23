@@ -456,14 +456,15 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             final images = room.images ?? [];
             final currentUser = AppState.instance.currentUser.value;
             final currentUserId = AppState.instance.currentUserId;
-            final canDelete = currentUser != null &&
+            final canDelete =
+                currentUser != null &&
                 (currentUser.isAdmin ||
                     (room.userId != null && room.userId == currentUserId) ||
                     room.creatorEmail == currentUser.email);
             final canAdminReject = currentUser != null && currentUser.isAdmin;
-            final canPause = currentUser != null &&
-                (currentUser.isAdmin ||
-                    (room.userId != null && room.userId == currentUserId) ||
+            final canPause =
+                currentUser != null &&
+                ((room.userId != null && room.userId == currentUserId) ||
                     room.creatorEmail == currentUser.email);
 
             return Scaffold(
