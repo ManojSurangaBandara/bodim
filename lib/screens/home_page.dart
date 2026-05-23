@@ -8,11 +8,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/app_state.dart';
 import '../services/localization.dart';
 import '../models/room.dart';
+import '../models/saved_alert.dart';
 import '../widgets/room_card.dart';
 import 'login_page.dart';
 import 'add_post_page.dart';
 import 'categories_page.dart';
 import 'my_ads_page.dart';
+import 'my_alerts_page.dart';
+import 'room_detail_page.dart';
 import 'pending_ads_page.dart';
 import 'reject_reasons_page.dart';
 import 'profile_page.dart';
@@ -62,6 +65,9 @@ class _HomePageState extends State<HomePage> {
       (_) => _checkConnectivity(),
     );
     AppState.instance.rooms.addListener(_onRoomsChanged);
+    AppState.instance.pendingNotificationRoomId.addListener(
+      _handlePendingNotification,
+    );
     _scrollController.addListener(() {
       final shouldShow = _scrollController.offset > 120;
       if (shouldShow != _showGoToTop) {
@@ -76,16 +82,67 @@ class _HomePageState extends State<HomePage> {
       _latestRooms = initialRooms;
       _updateFilterData(initialRooms);
     }
+    // Handle a pending notification roomId set before HomePage was built.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _handlePendingNotification(),
+    );
   }
 
   @override
   void dispose() {
     _connectivityTimer?.cancel();
     AppState.instance.rooms.removeListener(_onRoomsChanged);
+    AppState.instance.pendingNotificationRoomId.removeListener(
+      _handlePendingNotification,
+    );
     _minPriceController.dispose();
     _maxPriceController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handlePendingNotification() async {
+    final roomId = AppState.instance.pendingNotificationRoomId.value;
+    if (roomId == null || roomId.isEmpty) return;
+    // Clear immediately so we don't navigate twice.
+    AppState.instance.pendingNotificationRoomId.value = null;
+    if (!mounted) return;
+
+    // Retry up to 3 times with a short delay between attempts.
+    // This handles the brief "offline" window that can occur when the app
+    // is brought to the foreground from a background state, which can cause
+    // the first Firestore fetch to fail before the network is fully resumed.
+    Room? room;
+    for (int attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+      }
+      room = await AppState.instance.fetchRoom(roomId);
+      if (room != null) break;
+    }
+
+    if (room == null || !mounted) return;
+
+    // Only apply the alert filter when no filter is currently active.
+    // If the user already has a filter set, respect it and just show the ad.
+    if (_activeFilterCount == 0) {
+      final matchingAlert = AppState.instance.savedAlerts.value
+          .where(
+            (a) =>
+                (a.district == null || a.district == room!.district) &&
+                (a.town == null || a.town == room!.town) &&
+                (a.category == null || a.category == room!.category),
+          )
+          .cast<SavedAlert?>()
+          .firstOrNull;
+      if (matchingAlert != null) _applyAlertFilter(matchingAlert);
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => RoomDetailPage(room: room!)),
+    );
   }
 
   void _onRoomsChanged() {
@@ -251,6 +308,31 @@ class _HomePageState extends State<HomePage> {
       }
     }
     return towns.toList()..sort();
+  }
+
+  void _applyAlertFilter(SavedAlert alert) {
+    setState(() {
+      _selectedDistrict = alert.district;
+      _selectedTown = alert.town;
+      _selectedCategory = alert.category;
+
+      final minP = alert.minPrice;
+      final maxP = alert.maxPrice;
+      if (minP != null || maxP != null) {
+        final lo = (minP ?? _minPrice).clamp(_minPrice, _maxPrice).toDouble();
+        final hi = (maxP ?? _maxPrice).clamp(_minPrice, _maxPrice).toDouble();
+        _priceRange = RangeValues(
+          lo < hi ? lo : hi,
+          lo < hi ? hi : lo,
+        );
+      } else {
+        _priceRange = null;
+      }
+
+      _loadedRoomsCount = _pageSize;
+      _applyFilters();
+      _updatePriceControllers();
+    });
   }
 
   void _applyFilters() {
@@ -638,6 +720,65 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                   const SizedBox(height: 24),
+                  // Save as Alert button
+                  Builder(
+                    builder: (_) {
+                      final isLoggedIn =
+                          AppState.instance.currentUser.value != null &&
+                          !AppState.instance.isAnonymous;
+                      final canSave = isLoggedIn && _activeFilterCount > 0;
+                      return SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.notifications_active_outlined),
+                          label: Text(t('saveAsAlert')),
+                          onPressed: canSave
+                              ? () async {
+                                  final alertName = SavedAlert.buildName(
+                                    _selectedDistrict,
+                                    _selectedTown,
+                                    _selectedCategory,
+                                    _priceRange?.start.round(),
+                                    _priceRange?.end.round(),
+                                  );
+                                  final alert = SavedAlert(
+                                    userId:
+                                        AppState.instance.currentUserId ?? '',
+                                    fcmToken:
+                                        AppState.instance.fcmToken ?? '',
+                                    district: _selectedDistrict,
+                                    town: _selectedTown,
+                                    category: _selectedCategory,
+                                    minPrice: _priceRange?.start.round(),
+                                    maxPrice: _priceRange?.end.round(),
+                                    createdAt: DateTime.now(),
+                                    name: alertName,
+                                  );
+                                  Navigator.of(bsCtx).pop();
+                                  final ok =
+                                      await AppState.instance.saveAlert(alert);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          ok
+                                              ? t('alertSaved')
+                                              : 'Failed to save alert',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor:
+                                canSave ? null : Colors.grey.shade400,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -862,6 +1003,17 @@ class _HomePageState extends State<HomePage> {
                                   builder: (_) => const MyAdsPage(),
                                 ),
                               );
+                            } else if (v == 8) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => MyAlertsPage(
+                                    onApplyAlert: (alert) {
+                                      Navigator.of(context).pop();
+                                      _applyAlertFilter(alert);
+                                    },
+                                  ),
+                                ),
+                              );
                             } else if (v == 2) {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -917,6 +1069,10 @@ class _HomePageState extends State<HomePage> {
                               child: Text(t('createAd')),
                             ),
                             PopupMenuItem(value: 1, child: Text(t('myAds'))),
+                            PopupMenuItem(
+                              value: 8,
+                              child: Text(t('myAlerts')),
+                            ),
                             PopupMenuItem(value: 2, child: Text(t('profile'))),
                             if (user.isAdmin) ...[
                               PopupMenuItem(

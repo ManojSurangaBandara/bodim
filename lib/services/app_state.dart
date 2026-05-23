@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -10,6 +11,7 @@ import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/room.dart';
+import '../models/saved_alert.dart';
 import '../models/user.dart';
 import '../theme.dart';
 
@@ -27,14 +29,23 @@ class AppState {
   final ValueNotifier<AppThemeMode> themeMode = ValueNotifier<AppThemeMode>(
     AppThemeMode.light,
   );
+  final ValueNotifier<List<SavedAlert>> savedAlerts =
+      ValueNotifier<List<SavedAlert>>([]);
+  /// Set by main.dart when a notification is tapped (background / killed).
+  /// HomePage listens to this and navigates once it is mounted.
+  final ValueNotifier<String?> pendingNotificationRoomId =
+      ValueNotifier<String?>(null);
 
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  String? _fcmToken;
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _roomsSub;
   StreamSubscription<fb_auth.User?>? _authSub;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _profileSub;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _updateConfigSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _alertsSub;
   // ignore: unused_field
   String? _packageName;
   String? _currentVersion;
@@ -50,7 +61,41 @@ class AppState {
     _listenUpdateConfig();
     await _ensureSignedIn();
     await _checkForInAppUpdate();
+    await _initFCM();
   }
+
+  Future<void> _initFCM() async {
+    try {
+      final settings = await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (settings.authorizationStatus == AuthorizationStatus.denied) return;
+
+      _fcmToken = await _fcm.getToken();
+      _storeFCMToken(_fcmToken);
+
+      _fcm.onTokenRefresh.listen((newToken) {
+        _fcmToken = newToken;
+        _storeFCMToken(newToken);
+      });
+    } catch (e) {
+      debugPrint('FCM init failed: $e');
+    }
+  }
+
+  void _storeFCMToken(String? token) {
+    if (token == null) return;
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    _firestore.collection('users').doc(uid).set(
+      {'fcmToken': token},
+      SetOptions(merge: true),
+    );
+  }
+
+  String? get fcmToken => _fcmToken;
 
   Future<void> _ensureSignedIn() async {
     if (_auth.currentUser != null) return;
@@ -59,6 +104,8 @@ class AppState {
 
   void _handleAuthStateChanged(fb_auth.User? authUser) {
     _profileSub?.cancel();
+    _alertsSub?.cancel();
+    savedAlerts.value = [];
     if (authUser == null) {
       currentUser.value = null;
       return;
@@ -69,6 +116,8 @@ class AppState {
       currentUser.value = User(emailValue);
       return;
     }
+
+    _listenSavedAlerts(authUser.uid);
 
     final profileDoc = _firestore.collection('users').doc(authUser.uid);
     _profileSub = profileDoc.snapshots().listen(
@@ -431,5 +480,102 @@ class AppState {
     _authSub?.cancel();
     _profileSub?.cancel();
     _updateConfigSub?.cancel();
+    _alertsSub?.cancel();
+  }
+
+  // ──────────────────────────── Saved Alerts ───────────────────────────────
+
+  void _listenSavedAlerts(String uid) {
+    _alertsSub?.cancel();
+    _alertsSub = _firestore
+        .collection('saved_alerts')
+        .where('userId', isEqualTo: uid)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            final list = snapshot.docs
+                .map((doc) => SavedAlert.fromFirestore(doc))
+                .toList()
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            savedAlerts.value = list;
+          },
+          onError: (e) => debugPrint('Alerts stream error: $e'),
+        );
+  }
+
+  /// Fetch a single room document by ID. Returns null if not found.
+  Future<Room?> fetchRoom(String roomId) async {
+    // 1. Check in-memory rooms list first (no network needed).
+    final cached = rooms.value.cast<Room?>().firstWhere(
+      (r) => r?.id == roomId,
+      orElse: () => null,
+    );
+    if (cached != null) return cached;
+
+    // 2. Try live network fetch.
+    try {
+      final doc = await _firestore.collection('rooms').doc(roomId).get();
+      if (doc.exists && doc.data() != null) {
+        return Room.fromMap(doc.data()!, id: doc.id);
+      }
+    } catch (e) {
+      debugPrint('fetchRoom network error: $e');
+      // 3. Fallback: Firestore offline cache (handles brief offline windows
+      //    when the app resumes from background before the network is ready).
+      try {
+        final doc = await _firestore
+            .collection('rooms')
+            .doc(roomId)
+            .get(const GetOptions(source: Source.cache));
+        if (doc.exists && doc.data() != null) {
+          return Room.fromMap(doc.data()!, id: doc.id);
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  Future<bool> saveAlert(SavedAlert alert) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
+    try {
+      final token = _fcmToken ?? await _fcm.getToken() ?? '';
+      final alertWithToken = SavedAlert(
+        userId: uid,
+        fcmToken: token,
+        district: alert.district,
+        town: alert.town,
+        category: alert.category,
+        minPrice: alert.minPrice,
+        maxPrice: alert.maxPrice,
+        createdAt: DateTime.now(),
+        name: alert.name,
+      );
+      await _firestore
+          .collection('saved_alerts')
+          .add(alertWithToken.toMap())
+          .timeout(const Duration(seconds: 15));
+      return true;
+    } catch (e) {
+      debugPrint('saveAlert error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteAlert(String alertId) async {
+    // Optimistic update — remove immediately so UI responds instantly.
+    savedAlerts.value =
+        savedAlerts.value.where((a) => a.id != alertId).toList();
+    try {
+      await _firestore
+          .collection('saved_alerts')
+          .doc(alertId)
+          .delete()
+          .timeout(const Duration(seconds: 15));
+      return true;
+    } catch (e) {
+      debugPrint('deleteAlert error: $e');
+      return false;
+    }
   }
 }
