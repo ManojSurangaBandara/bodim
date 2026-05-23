@@ -168,8 +168,12 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 8),
                         TextButton(
-                          onPressed: _loading ? null : _loginAnonymously,
-                          child: Text(t('continueAnonymously')),
+                          onPressed: () {
+                            Navigator.of(
+                              context,
+                            ).popUntil((route) => route.isFirst);
+                          },
+                          child: Text(t('goHome')),
                         ),
                       ],
                     ),

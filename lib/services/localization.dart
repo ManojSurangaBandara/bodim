@@ -61,6 +61,7 @@ class AppLocalizations {
       'invalidContactNumber':
           'Contact number must start with 0 and contain exactly 10 digits.',
       'mustBeLoggedIn': 'You must be logged in to add a post.',
+      'goHome': 'Go to Home',
       'noInternetConnection':
           'No internet connection. Please try again when you are online.',
       'unableUploadImages':
@@ -200,6 +201,7 @@ class AppLocalizations {
       'invalidContactNumber':
           'දුරකථන අංකය 0 කින් ආරම්භ වන අතර අංක 10ක් තිබිය යුතුය.',
       'mustBeLoggedIn': 'දැන්වීමක් එක් කිරීමට ඔබ ලොග් විය යුතුය.',
+      'goHome': 'මුල් පිටුවට යන්න',
       'noInternetConnection':
           'අන්තර්ජාල සම්බන්ධතාවයක් නොමැත. කරුණාකර නැවත උත්සාහ කරන්න.',
       'unableUploadImages':
@@ -342,6 +344,7 @@ class AppLocalizations {
           'தொடர்பு எண் 0-ஆல் துவங்கி சரியாக 10 இலக்கங்களைக் கொண்டிருக்க வேண்டும்.',
       'mustBeLoggedIn':
           'ஒரு பதிவைச் சேர்க்க நீங்கள் உள்நுழைந்திருக்க வேண்டும்.',
+      'goHome': 'முகப்புப் பக்கத்திற்குச் செல்லவும்',
       'noInternetConnection': 'இணைய இணைப்பு இல்லை. மீண்டும் முயற்சி செய்க.',
       'unableUploadImages':
           'படங்களை பதிவேற்ற முடியவில்லை. உங்கள் இணைப்பை சரிபார்த்து மீண்டும் முயற்சி செய்யவும்.',

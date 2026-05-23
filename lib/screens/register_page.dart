@@ -189,6 +189,15 @@ class _RegisterPageState extends State<RegisterPage> {
                           },
                           child: Text(t('alreadyHaveAccountLogin')),
                         ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(
+                              context,
+                            ).popUntil((route) => route.isFirst);
+                          },
+                          child: Text(t('goHome')),
+                        ),
                       ],
                     ),
                   ),
