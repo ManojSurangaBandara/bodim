@@ -776,7 +776,8 @@ class _AddPostPageState extends State<AddPostPage> {
             ? _selectedDistrict
             : null;
         final townChoices = selectedDistrict != null
-            ? _districtTowns[selectedDistrict]!
+            ? (List.of(_districtTowns[selectedDistrict]!)
+                ..sort((a, b) => a.compareTo(b)))
             : <String>[];
         final selectedTown = townChoices.contains(_selectedTown)
             ? _selectedTown
