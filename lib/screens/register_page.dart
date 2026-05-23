@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/app_state.dart';
+import '../services/localization.dart';
 import '../theme.dart';
 import '../widgets/pressable_scale.dart';
 import 'login_page.dart';
@@ -18,6 +19,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passCtl = TextEditingController();
   bool _loading = false;
 
+  String t(String key) =>
+      AppLocalizations.translate(AppState.instance.languageCode.value, key);
+
   Future<void> _register() async {
     setState(() => _loading = true);
     final ok = await AppState.instance.register(
@@ -31,149 +35,169 @@ class _RegisterPageState extends State<RegisterPage> {
     if (ok) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Registration successful')));
+      ).showSnackBar(SnackBar(content: Text(t('registrationSuccessful'))));
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
       Navigator.of(context).pop(); // go back to login/home
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Email already registered')));
+      ).showSnackBar(SnackBar(content: Text(t('emailAlreadyRegistered'))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final grad = Theme.of(context).extension<AppGradients>()!;
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [grad.bodyStart, grad.bodyEnd],
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+    return ValueListenableBuilder<String>(
+      valueListenable: AppState.instance.languageCode,
+      builder: (context, languageCode, __) {
+        String t(String key) => AppLocalizations.translate(languageCode, key);
+
+        return Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [grad.bodyStart, grad.bodyEnd],
               ),
-              child: Padding(
+            ),
+            child: Center(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'බෝඩිම්.lk',
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.brandColor,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Create your account',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 32),
-                    TextFormField(
-                      controller: _nameCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'Name (optional)',
-                        prefixIcon: Icon(Icons.person),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                child: Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'බෝඩිම්.lk',
+                          style: TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.brandColor,
+                            letterSpacing: 1,
+                          ),
                         ),
-                      ),
-                      textCapitalization: TextCapitalization.words,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone (optional)',
-                        prefixIcon: Icon(Icons.phone),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        const SizedBox(height: 8),
+                        Text(
+                          t('createYourAccount'),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                        ),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passCtl,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                        ),
-                      ),
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: PressableScale(
-                        child: ElevatedButton(
-                          onPressed: _loading ? null : _register,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 32),
+                        TextFormField(
+                          controller: _nameCtl,
+                          decoration: InputDecoration(
+                            labelText: t('nameOptional'),
+                            prefixIcon: const Icon(Icons.person),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
                             ),
                           ),
-                          child: _loading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text(
-                                  'Register',
-                                  style: TextStyle(fontSize: 16),
-                                ),
+                          textCapitalization: TextCapitalization.words,
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => const LoginPage(),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _phoneCtl,
+                          decoration: InputDecoration(
+                            labelText: t('phoneOptional'),
+                            prefixIcon: const Icon(Icons.phone),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
                           ),
-                        );
-                      },
-                      child: const Text('Already have an account? Login'),
+                          keyboardType: TextInputType.phone,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _emailCtl,
+                          decoration: InputDecoration(
+                            labelText: t('email'),
+                            prefixIcon: const Icon(Icons.email),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passCtl,
+                          decoration: InputDecoration(
+                            labelText: t('password'),
+                            prefixIcon: const Icon(Icons.lock),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                          ),
+                          obscureText: true,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: PressableScale(
+                            child: ElevatedButton(
+                              onPressed: _loading ? null : _register,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: _loading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      t('register'),
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => const LoginPage(),
+                              ),
+                            );
+                          },
+                          child: Text(t('alreadyHaveAccountLogin')),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
