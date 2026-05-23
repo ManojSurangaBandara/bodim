@@ -833,19 +833,13 @@ class _HomePageState extends State<HomePage> {
                 valueListenable: app.currentUser,
                 builder: (context, user, child) {
                   if (user == null || app.isAnonymous) {
-                    return TextButton.icon(
+                    return IconButton(
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const LoginPage()),
                       ),
                       icon: const Icon(Icons.login),
-                      label: Text(t('login')),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
+                      tooltip: t('login'),
+                      color: Colors.white,
                     );
                   } else {
                     return ValueListenableBuilder<List<Room>>(
