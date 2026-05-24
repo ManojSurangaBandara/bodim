@@ -149,27 +149,8 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     final roomList = AppState.instance.rooms.value.cast<Room>();
 
-    final oldRoomsById = {
-      for (var room in _latestRooms)
-        if (room.id != null) room.id!: room,
-    };
-    final becameApproved = roomList.any((newRoom) {
-      if (newRoom.id == null) return false;
-      final oldRoom = oldRoomsById[newRoom.id];
-      return oldRoom != null &&
-          (oldRoom.status == 'paused' || oldRoom.status == 'pending') &&
-          newRoom.status == 'approved';
-    });
-
     setState(() {
       _latestRooms = roomList;
-      if (becameApproved) {
-        _selectedDistrict = null;
-        _selectedTown = null;
-        _selectedCategory = null;
-        _priceRange = null;
-        _loadedRoomsCount = _pageSize;
-      }
       _updateFilterData(roomList);
     });
 
