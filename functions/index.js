@@ -117,9 +117,10 @@ function parsePrice(priceStr) {
  * A null filter field means "any".
  */
 function matchesAlert(alert, room, roomPrice) {
-  if (alert.district && alert.district !== room.district) return false;
-  if (alert.town && alert.town !== room.town) return false;
-  if (alert.category && alert.category !== room.category) return false;
+  const norm = (v) => (v ?? "").trim().toLowerCase();
+  if (alert.district && norm(alert.district) !== norm(room.district)) return false;
+  if (alert.town && norm(alert.town) !== norm(room.town)) return false;
+  if (alert.category && norm(alert.category) !== norm(room.category)) return false;
 
   if (roomPrice !== null) {
     if (alert.minPrice !== null && alert.minPrice !== undefined) {
