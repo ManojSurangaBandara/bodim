@@ -1,6 +1,6 @@
 const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 initializeApp();
@@ -32,15 +32,57 @@ exports.notifyOnRoomApproved = onDocumentUpdated(
 
     if (alertsSnapshot.empty) return null;
 
-    const tokens = [];
+    // Step 1: Find which userIds have at least one alert matching this room.
+    // Also track alert-level tokens for users who have no userId stored.
+    const matchingUserIds = new Set();
+    const standaloneTokens = []; // alerts with no userId — match individually
 
     for (const doc of alertsSnapshot.docs) {
       const alert = doc.data();
-
-      if (!alert.fcmToken) continue;
       if (!matchesAlert(alert, room, roomPrice)) continue;
 
-      tokens.push({ token: alert.fcmToken, alertId: doc.id });
+      if (alert.userId) {
+        matchingUserIds.add(alert.userId);
+      } else if (alert.fcmToken) {
+        standaloneTokens.push({ token: alert.fcmToken, alertId: doc.id, userId: null });
+      }
+    }
+
+    // Step 2: For each matched userId, fetch ALL their registered FCM tokens
+    // from users/{uid}.fcmTokens — this covers every device they've ever
+    // logged in from (Android + web), regardless of which device saved the alert.
+    const tokens = [];
+    const seenTokens = new Set();
+
+    if (matchingUserIds.size > 0) {
+      const userDocs = await Promise.all(
+        Array.from(matchingUserIds).map((uid) =>
+          db.collection("users").doc(uid).get()
+        )
+      );
+      for (const userDoc of userDocs) {
+        if (!userDoc.exists) continue;
+        const data = userDoc.data();
+        const userTokens = Array.isArray(data.fcmTokens) ? data.fcmTokens : [];
+        // Also include the legacy single fcmToken field if not in array yet.
+        if (data.fcmToken && !userTokens.includes(data.fcmToken)) {
+          userTokens.push(data.fcmToken);
+        }
+        for (const token of userTokens) {
+          if (token && !seenTokens.has(token)) {
+            seenTokens.add(token);
+            tokens.push({ token, alertId: null, userId: userDoc.id });
+          }
+        }
+      }
+    }
+
+    // Step 3: Add standalone (no-userId) matched tokens as fallback.
+    for (const entry of standaloneTokens) {
+      if (!seenTokens.has(entry.token)) {
+        seenTokens.add(entry.token);
+        tokens.push(entry);
+      }
     }
 
     if (tokens.length === 0) return null;
@@ -83,10 +125,20 @@ exports.notifyOnRoomApproved = onDocumentUpdated(
             "messaging/registration-token-not-registered" ||
             res.error.code === "messaging/invalid-registration-token")
         ) {
-          const alertId = batch[idx].alertId;
-          deleteOps.push(
-            db.collection("saved_alerts").doc(alertId).delete()
-          );
+          const entry = batch[idx];
+          if (entry.userId) {
+            // User-level token: remove stale token from the fcmTokens array.
+            deleteOps.push(
+              db.collection("users").doc(entry.userId).update({
+                fcmTokens: FieldValue.arrayRemove(entry.token),
+              }).catch(() => {})
+            );
+          } else if (entry.alertId) {
+            // Legacy standalone alert: delete the alert document.
+            deleteOps.push(
+              db.collection("saved_alerts").doc(entry.alertId).delete()
+            );
+          }
         }
       });
 

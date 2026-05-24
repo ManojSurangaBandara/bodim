@@ -77,6 +77,7 @@ class AppState {
       _storeFCMToken(_fcmToken);
 
       _fcm.onTokenRefresh.listen((newToken) {
+        _removeFCMToken(_fcmToken);
         _fcmToken = newToken;
         _storeFCMToken(newToken);
       });
@@ -90,9 +91,21 @@ class AppState {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
     _firestore.collection('users').doc(uid).set(
-      {'fcmToken': token},
+      {
+        'fcmToken': token,
+        'fcmTokens': FieldValue.arrayUnion([token]),
+      },
       SetOptions(merge: true),
     );
+  }
+
+  void _removeFCMToken(String? token) {
+    if (token == null) return;
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    _firestore.collection('users').doc(uid).update({
+      'fcmTokens': FieldValue.arrayRemove([token]),
+    }).catchError((_) {});
   }
 
   String? get fcmToken => _fcmToken;
