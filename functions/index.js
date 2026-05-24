@@ -85,6 +85,52 @@ exports.notifyOnRoomApproved = onDocumentUpdated(
       }
     }
 
+    const messaging = getMessaging();
+    const roomId = event.params.roomId;
+
+    // ── Notify the ad owner that their listing was approved ──────────────────
+    const ownerUid = room.userId;
+    if (ownerUid) {
+      const ownerDoc = await db.collection("users").doc(ownerUid).get();
+      if (ownerDoc.exists) {
+        const ownerData = ownerDoc.data();
+        const ownerTokens = Array.isArray(ownerData.fcmTokens) ? [...ownerData.fcmTokens] : [];
+        if (ownerData.fcmToken && !ownerTokens.includes(ownerData.fcmToken)) {
+          ownerTokens.push(ownerData.fcmToken);
+        }
+        if (ownerTokens.length > 0) {
+          const ownerTitle = "Your ad has been approved!";
+          const ownerBody = room.title
+            ? `"${room.title}" is now live.`
+            : "Your listing is now live and visible to everyone.";
+          const ownerResponse = await messaging.sendEachForMulticast({
+            tokens: ownerTokens,
+            notification: { title: ownerTitle, body: ownerBody },
+            android: { notification: { channelId: "bodim_alerts", priority: "high" } },
+            data: { roomId, type: "ad_approved" },
+          });
+          // Clean up stale owner tokens.
+          const ownerCleanup = [];
+          ownerResponse.responses.forEach((res, idx) => {
+            if (
+              !res.success &&
+              res.error &&
+              (res.error.code === "messaging/registration-token-not-registered" ||
+                res.error.code === "messaging/invalid-registration-token")
+            ) {
+              ownerCleanup.push(
+                db.collection("users").doc(ownerUid).update({
+                  fcmTokens: FieldValue.arrayRemove(ownerTokens[idx]),
+                }).catch(() => {})
+              );
+            }
+          });
+          if (ownerCleanup.length > 0) await Promise.all(ownerCleanup);
+        }
+      }
+    }
+
+    // ── Notify users with matching saved alerts ───────────────────────────────
     if (tokens.length === 0) return null;
 
     const category = room.category && room.category.trim()
@@ -92,8 +138,6 @@ exports.notifyOnRoomApproved = onDocumentUpdated(
       : "Bodim";
     const title = `New ${category} Available!`;
     const body = buildBody(room);
-
-    const messaging = getMessaging();
 
     // Send in batches of 500 (FCM multicast limit).
     const batchSize = 500;
@@ -109,7 +153,7 @@ exports.notifyOnRoomApproved = onDocumentUpdated(
           },
         },
         data: {
-          roomId: event.params.roomId,
+          roomId,
           district: room.district ?? "",
           town: room.town ?? "",
         },

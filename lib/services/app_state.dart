@@ -132,6 +132,12 @@ class AppState {
 
     _listenSavedAlerts(authUser.uid);
 
+    // Store (or refresh) the FCM token under the signed-in user's document.
+    // This is necessary because _initFCM() runs when the user is still
+    // anonymous, so the token gets stored under the anonymous UID. When the
+    // user then logs in with email, we must re-store it under the real UID.
+    _storeFCMToken(_fcmToken);
+
     final profileDoc = _firestore.collection('users').doc(authUser.uid);
     _profileSub = profileDoc.snapshots().listen(
       (snapshot) {
