@@ -53,6 +53,10 @@ class _HomePageState extends State<HomePage> {
   int _maxPrice = 0;
   // ignore: unused_field
   RangeValues? _effectivePriceRange;
+  // Rooms received from the stream while the user is scrolled down.
+  // Applied (and scroll reset) only when the user taps the banner.
+  List<Room>? _bufferedRoomsUpdate;
+  int _bufferedNewCount = 0;
   final ScrollController _scrollController = ScrollController();
   bool _showGoToTop = false;
 
@@ -149,10 +153,33 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     final roomList = AppState.instance.rooms.value.cast<Room>();
 
-    setState(() {
-      _latestRooms = roomList;
-      _updateFilterData(roomList);
-    });
+    // Count rooms that are new (not yet in the displayed list).
+    final currentIds = _latestRooms.map((r) => r.id).toSet();
+    final newCount =
+        roomList
+            .where((r) => r.id != null && !currentIds.contains(r.id))
+            .length;
+
+    // If the user is scrolled down and there are genuinely new rooms,
+    // buffer the update and show a banner instead of disrupting their scroll.
+    final isScrolledDown =
+        _scrollController.hasClients && _scrollController.offset > 50;
+
+    if (newCount > 0 && isScrolledDown) {
+      setState(() {
+        _bufferedRoomsUpdate = roomList;
+        // Compare against the displayed list each time so the count is
+        // accurate even when multiple updates arrive while buffering.
+        _bufferedNewCount = newCount;
+      });
+    } else {
+      setState(() {
+        _latestRooms = roomList;
+        _bufferedRoomsUpdate = null;
+        _bufferedNewCount = 0;
+        _updateFilterData(roomList);
+      });
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -289,6 +316,21 @@ class _HomePageState extends State<HomePage> {
       }
     }
     return towns.toList()..sort();
+  }
+
+  void _applyBufferedRooms() {
+    if (_bufferedRoomsUpdate == null) return;
+    setState(() {
+      _latestRooms = _bufferedRoomsUpdate!;
+      _bufferedRoomsUpdate = null;
+      _bufferedNewCount = 0;
+      _updateFilterData(_latestRooms);
+    });
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOut,
+    );
   }
 
   void _applyAlertFilter(SavedAlert alert) {
@@ -1327,7 +1369,9 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         Expanded(
-                          child: isLoadingRooms
+                          child: Stack(
+                            children: [
+                              isLoadingRooms
                               ? const Center(child: CircularProgressIndicator())
                               : filtered.isEmpty
                               ? Center(
@@ -1467,6 +1511,60 @@ class _HomePageState extends State<HomePage> {
                                     },
                                   ),
                                 ),
+                              if (_bufferedNewCount > 0)
+                                Positioned(
+                                  top: 12,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                    child: GestureDetector(
+                                      onTap: _applyBufferedRooms,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 18,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.92),
+                                          borderRadius:
+                                              BorderRadius.circular(24),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Colors.black26,
+                                              blurRadius: 6,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.arrow_upward,
+                                              size: 15,
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              '$_bufferedNewCount new listing'
+                                              '${_bufferedNewCount == 1 ? '' : 's'}',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     );
