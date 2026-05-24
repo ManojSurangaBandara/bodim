@@ -45,7 +45,10 @@ exports.notifyOnRoomApproved = onDocumentUpdated(
 
     if (tokens.length === 0) return null;
 
-    const title = "New Room Available!";
+    const category = room.category && room.category.trim()
+      ? room.category.trim()
+      : "Bodim";
+    const title = `New ${category} Available!`;
     const body = buildBody(room);
 
     const messaging = getMessaging();
