@@ -45,7 +45,6 @@ class _HomePageState extends State<HomePage> {
 
   List<Room> _latestRooms = [];
   List<Room> _cachedRooms = [];
-  List<String> _districts = [];
   List<String> _categories = [];
   List<Room> _filteredRooms = [];
   List<int> _priceList = [];
@@ -53,6 +52,149 @@ class _HomePageState extends State<HomePage> {
   int _maxPrice = 0;
   // ignore: unused_field
   RangeValues? _effectivePriceRange;
+
+  static const Map<String, List<String>> _districtTowns = {
+    'Colombo': [
+      'Nugegoda', 'Maharagama', 'Piliyandala', 'Colombo 3', 'Dehiwala',
+      'Boralesgamuwa', 'Kottawa', 'Battaramulla', 'Homagama', 'Athurugiriya',
+      'Moratuwa', 'Colombo 6', 'Rajagiriya', 'Malabe', 'Talawatugoda',
+      'Colombo 4', 'Pannipitiya', 'Kaduwela', 'Wellampitiya', 'Ratmalana',
+      'Colombo 5', 'Kotte', 'Mount Lavinia', 'Colombo 10', 'Kohuwala',
+      'Colombo 8', 'Angoda', 'Colombo 12', 'Colombo 2', 'Colombo 13',
+      'Avissawella', 'Colombo 11', 'Kolonnawa', 'Nawala', 'Colombo 9',
+      'Colombo 7', 'Meegoda', 'Colombo 15', 'Kesbewa', 'Colombo 14',
+      'Hanwella', 'Padukka', 'Godagama', 'Colombo 1', 'Polgasowita',
+      'Kalubowila', 'Kotikawatta', 'Ranala', 'Nawagamuwa', 'Olaboduwa', 'Embulgama',
+    ],
+    'Gampaha': [
+      'Gampaha City', 'Negombo', 'Kadawatha', 'Kiribathgoda', 'Wattala',
+      'Ja-Ela', 'Kelaniya', 'Nittambuwa', 'Minuwangoda', 'Kandana',
+      'Ragama', 'Delgoda', 'Katunayake', 'Veyangoda', 'Seeduwa',
+      'Ganemulla', 'Mirigama', 'Divulapitiya', 'Biyagama', 'Kalagedihena',
+      'Kirindiwela', 'Peliyagoda', 'Dompe', 'Miriswatta', 'Bopitiya',
+      'Pugoda', 'Gonawala', 'Mawaramandiya', 'Walikatiya', 'Delathura', 'Nilsirigama',
+    ],
+    'Kalutara': [
+      'Panadura', 'Horana', 'Kalutara City', 'Bandaragama', 'Alutgama',
+      'Matugama', 'Wadduwa', 'Beruwala', 'Ingiriya', 'Gonapola',
+      'Talagala', 'Awittawa', 'Ittapane', 'Pitipana', 'Meegahathenna',
+      'Kevitiyagala', 'Moragala', 'Walallavita', 'Polgampola', 'Uthumgama',
+    ],
+    'Kandy': [
+      'Kandy City', 'Gampola', 'Katugastota', 'Akurana', 'Peradeniya',
+      'Pilimatalawa', 'Digana', 'Kundasale', 'Nawalapitiya', 'Gelioya',
+      'Galagedara', 'Kadugannawa', 'Ampitiya', 'Madawala Bazaar', 'Wattegama',
+      'Pussellawa', 'Menikhinna', 'Galaha', 'Danthure', 'Deltota',
+      'Pallekele', 'Udunuwara', 'Urapola', 'Doluwa', 'Dodamwala',
+      'Poththapitiya', 'Pathahewaheta', 'Rattapitiya', 'Tawalantenne',
+    ],
+    'Matale': [
+      'Matale', 'Dambulla', 'Sigiriya', 'Galewela', 'Ukuwela',
+      'Rattota', 'Yatawatta', 'Pallepola', 'Naula', 'Laggala-Pallegama',
+    ],
+    'Nuwara Eliya': [
+      'Nuwara Eliya', 'Hatton', 'Talawakele', 'Ginigathena', 'Walapane',
+      'Madulla', 'Kundasale', 'Hanguranketha', 'Nuwara Eliya-Maskeliya',
+      'Kotagala', 'Ramboda', 'Ambewela', 'Pundaluoya', 'Haputale', 'Welimada',
+    ],
+    'Galle': [
+      'Galle', 'Hikkaduwa', 'Ambalangoda', 'Elpitiya', 'Bentota',
+      'Baddegama', 'Balapitiya', 'Ahangama', 'Urubokka', 'Nagoda',
+      'Neluwa', 'Udugama', 'Imaduwa', 'Habaraduwa', 'Karandeniya',
+    ],
+    'Matara': [
+      'Matara', 'Weligama', 'Akuressa', 'Hakmana', 'Kamburupitiya',
+      'Dickwella', 'Deniyaya', 'Devinuwara', 'Kekanadura', 'Pitabeddara',
+      'Thihagoda', 'Malimbada', 'Pasgoda', 'Mulatiyana', 'Welihinda',
+    ],
+    'Hambantota': [
+      'Hambantota', 'Tangalle', 'Beliatta', 'Tissamaharama', 'Kataragama',
+      'Ambalantota', 'Weeraketiya', 'Angunakolapelessa', 'Lunugamvehera',
+      'Okewela', 'Walasmulla', 'Sooriyawewa', 'Middeniya', 'Rajagalatenna',
+    ],
+    'Jaffna': [
+      'Jaffna', 'Chavakachcheri', 'Point Pedro', 'Valvettithurai', 'Karainagar',
+      'Kayts', 'Nallur', 'Tellippalai', 'Uduvil', 'Chankanai',
+      'Sandilipay', 'Maruthankerny', 'Velanai', 'Delft', 'Kopay',
+    ],
+    'Kilinochchi': [
+      'Kilinochchi', 'Poonakary', 'Paranthan', 'Mullaitivu', 'Mankulam',
+      'Vavuniya', 'Mannar', 'Mulliyawalai', 'Oddusuddan', 'Madhu',
+      'Nanattan', 'Murunkan', 'Adampan', 'Puthukkudiyiruppu', 'Iranamadu',
+    ],
+    'Mannar': [
+      'Mannar', 'Vankalai', 'Pesalai', 'Madhu', 'Nanattan',
+      'Murunkan', 'Adampan', 'Puthukkudiyiruppu', 'Iranamadu', 'Talaimannar',
+      'Erukkalampiddy', 'Sillalai', 'Uttukulam', 'Marichchikaddi', 'Kallikulam',
+    ],
+    'Vavuniya': [
+      'Vavuniya', 'Cheddikulam', 'Nedunkeni', 'Mullaitivu', 'Mannar',
+      'Kilinochchi', 'Anuradhapura', 'Trincomalee', 'Batticaloa', 'Ampara',
+      'Polonnaruwa', 'Kurunegala', 'Puttalam', 'Matale', 'Nuwara Eliya',
+    ],
+    'Mullaitivu': [
+      'Mullaitivu', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Oddusuddan',
+      'Puthukkudiyiruppu', 'Mankulam', 'Maritimepattu', 'Thunukkai', 'Poonakary',
+      'Paranthan', 'Mulliyawalai', 'Nanattan', 'Madhu', 'Iranamadu',
+    ],
+    'Batticaloa': [
+      'Batticaloa', 'Eravur', 'Valachchenai', 'Kattankudy', 'Oddamavadi',
+      'Kalmunai', 'Sainthamaruthu', 'Pottuvil', 'Arayampathy', 'Chenkalady',
+      'Vakarai', 'Manmunai', 'Porativu', 'Kiran', 'Koralai Pattu',
+    ],
+    'Ampara': [
+      'Ampara', 'Akkaraipattu', 'Kalmunai', 'Sainthamaruthu', 'Pottuvil',
+      'Uhana', 'Maha Oya', 'Navithanveli', 'Lahugala', 'Dehiattakandiya',
+      'Sammanthurai', 'Irakkamam', 'Addalachchenai', 'Alayadiwembu', 'Damana',
+    ],
+    'Trincomalee': [
+      'Trincomalee', 'Kinniya', 'Muttur', 'Kuchchaveli', 'Seruvila',
+      'Thampalakamam', 'Gomarankadawala', 'Padavi Sri Pura', 'Kantalai',
+      'Moratuwa', 'Verugal', 'Eachchilampattu', 'Nilaveli', 'Pulmoddai', 'Sampur',
+    ],
+    'Kurunegala': [
+      'Kurunegala', 'Kuliyapitiya', 'Narammala', 'Polgahawela', 'Wariyapola',
+      'Pannala', 'Alawwa', 'Mawathagama', 'Nikaweratiya', 'Ibbagamuwa',
+      'Ganewatta', 'Pothuhera', 'Katugampola', 'Bingiriya', 'Dambadeniya',
+    ],
+    'Puttalam': [
+      'Puttalam', 'Chilaw', 'Wennappuwa', 'Marawila', 'Dankotuwa',
+      'Nattandiya', 'Anamaduwa', 'Kalpitiya', 'Arachchikattuwa', 'Madampe',
+      'Vanathavilluwa', 'Nawagattegama', 'Pallama', 'Lunuwila', 'Mundalama',
+    ],
+    'Anuradhapura': [
+      'Anuradhapura', 'Kekirawa', 'Medawachchiya', 'Tambuttegama', 'Mihintale',
+      'Nochchiyagama', 'Galnewa', 'Rambewa', 'Thalawa', 'Rajanganaya',
+      'Horowpothana', 'Ipalogama', 'Palagala', 'Kahatagasdigiliya', 'Nachchadoowa',
+    ],
+    'Polonnaruwa': [
+      'Polonnaruwa', 'Kaduruwela', 'Hingurakgoda', 'Medirigiriya', 'Dimbulagala',
+      'Elahera', 'Lankapura', 'Welikanda', 'Aralaganwila', 'Manampitiya',
+      'Giritale', 'Thamankaduwa', 'Bakamuna', 'Dehiattakandiya', 'Jayantipura',
+    ],
+    'Badulla': [
+      'Badulla', 'Bandarawela', 'Haputale', 'Welimada', 'Mahiyanganaya',
+      'Rideegama', 'Girandurukotte', 'Hali-Ela', 'Uva-Paranagama', 'Kandaketiya',
+      'Ella', 'Passara', 'Lunugala', 'Sorabora', 'Madulsima',
+    ],
+    'Moneragala': [
+      'Moneragala', 'Wellawaya', 'Bibile', 'Kataragama', 'Buttala',
+      'Siyambalanduwa', 'Medagama', 'Thanamalvila', 'Sevanagala', 'Badalkumbura',
+      'Dambagalla', 'Pitabeddara', 'Okkampitiya', 'Nakkala', 'Hulandawa',
+    ],
+    'Ratnapura': [
+      'Ratnapura', 'Embilipitiya', 'Balangoda', 'Pelmadulla', 'Eheliyagoda',
+      'Kuruwita', 'Kiriella', 'Opanayaka', 'Nivithigala', 'Ayagama',
+      'Kalawana', 'Imbulpe', 'Godakawela', 'Kahawatta', 'Weligepola',
+    ],
+    'Kegalle': [
+      'Kegalle', 'Mawanella', 'Warakapola', 'Rambukkana', 'Galigamuwa',
+      'Yatiyanthota', 'Deraniyagala', 'Bulathkohupitiya', 'Aranayaka', 'Kitulgala',
+      'Hemmathagama', 'Dehiovita', 'Ruwanwella', 'Weligalla', 'Udapotha',
+    ],
+  };
+
+  List<String> get _districts => (_districtTowns.keys.toList()..sort());
   // Rooms received from the stream while the user is scrolled down.
   // Applied (and scroll reset) only when the user taps the banner.
   List<Room>? _bufferedRoomsUpdate;
@@ -306,16 +448,7 @@ class _HomePageState extends State<HomePage> {
     if (_selectedDistrict == null || _selectedDistrict!.isEmpty) {
       return [];
     }
-
-    final towns = <String>{};
-    for (var r in _cachedRooms) {
-      if (r.district == _selectedDistrict &&
-          r.town != null &&
-          r.town!.trim().isNotEmpty) {
-        towns.add(r.town!.trim());
-      }
-    }
-    return towns.toList()..sort();
+    return (List<String>.from(_districtTowns[_selectedDistrict] ?? []))..sort();
   }
 
   void _applyBufferedRooms() {
@@ -384,18 +517,10 @@ class _HomePageState extends State<HomePage> {
   void _updateFilterData(List<Room> rooms) {
     _cachedRooms = rooms.where((r) => r.status == 'approved').toList();
 
-    final districts = <String>{};
-    final towns = <String>{};
     _categories = [];
     _priceList = [];
 
     for (var r in _cachedRooms) {
-      if (r.district != null && r.district!.trim().isNotEmpty) {
-        districts.add(r.district!);
-      }
-      if (r.town != null && r.town!.trim().isNotEmpty) {
-        towns.add(r.town!);
-      }
       if (r.category != null && r.category!.trim().isNotEmpty) {
         _categories.add(r.category!.trim());
       }
@@ -405,7 +530,6 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    _districts = districts.toList()..sort();
     _categories = _categories.toSet().toList()..sort();
 
     if (_priceList.isNotEmpty) {
