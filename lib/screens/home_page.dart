@@ -620,14 +620,15 @@ class _HomePageState extends State<HomePage> {
           }
 
           final scheme = Theme.of(bsCtx).colorScheme;
+          final surfaceColor = scheme.surface;
           return Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(bsCtx).viewInsets.bottom,
             ),
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               ),
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
               child: Column(
@@ -674,7 +675,7 @@ class _HomePageState extends State<HomePage> {
                         icon: const Icon(Icons.clear_all, size: 18),
                         label: Text(t('clearFilters')),
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey.shade700,
+                          foregroundColor: scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -686,6 +687,7 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
+                          dropdownColor: surfaceColor,
                           value:
                               (_selectedDistrict != null &&
                                   _districts.contains(_selectedDistrict))
@@ -731,6 +733,7 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
+                          dropdownColor: surfaceColor,
                           value:
                               (_selectedTown != null &&
                                   _availableTowns.contains(_selectedTown))
@@ -780,6 +783,7 @@ class _HomePageState extends State<HomePage> {
                   // Category
                   DropdownButtonFormField<String>(
                     isExpanded: true,
+                    dropdownColor: surfaceColor,
                     value:
                         (_selectedCategory != null &&
                             _categories.contains(_selectedCategory))
@@ -824,7 +828,7 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
