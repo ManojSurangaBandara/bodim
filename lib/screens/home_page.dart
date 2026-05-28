@@ -1549,6 +1549,7 @@ class _HomePageState extends State<HomePage> {
                                               setState(() {
                                                 _selectedDistrict = null;
                                                 _selectedTown = null;
+                                                _selectedCategory = null;
                                                 _priceRange = null;
                                                 _resetLoadedRooms();
                                                 _applyFilters();
