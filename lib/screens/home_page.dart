@@ -1705,8 +1705,9 @@ class _HomePageState extends State<HomePage> {
                   builder: (context, forceUpdate, _) {
                     if (!forceUpdate) return const SizedBox.shrink();
                     return Positioned.fill(
-                      child: AbsorbPointer(
-                        absorbing: true,
+                      child: GestureDetector(
+                        onTap: () {},
+                        behavior: HitTestBehavior.opaque,
                         child: Container(
                           color: Colors.white.withOpacity(0.95),
                           alignment: Alignment.center,
