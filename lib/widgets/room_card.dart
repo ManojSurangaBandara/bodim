@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import '../models/room.dart';
+import '../theme.dart';
 import '../screens/room_detail_page.dart';
 import '../services/app_state.dart';
 import '../services/localization.dart';
@@ -97,16 +98,16 @@ class RoomCard extends StatelessWidget {
         imageWidget = f.existsSync()
             ? Image.file(f, fit: BoxFit.cover)
             : Icon(
-                Icons.home,
+                Icons.home_work,
                 size: 40,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: Theme.of(context).extension<AppGradients>()!.barBackground,
               );
       }
     } else {
       imageWidget = Icon(
-        Icons.home,
+        Icons.home_work,
         size: 40,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        color: Theme.of(context).extension<AppGradients>()!.barBackground,
       );
     }
 
