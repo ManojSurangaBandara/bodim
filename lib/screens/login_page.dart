@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/app_state.dart';
 import '../services/localization.dart';
 import '../theme.dart';
@@ -29,6 +30,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
+      TextInput.finishAutofillContext();
       Navigator.of(context).pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,6 +101,9 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 32),
+                        AutofillGroup(
+                          child: Column(
+                            children: [
                         TextFormField(
                           controller: _emailCtl,
                           decoration: InputDecoration(
@@ -111,6 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email],
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -125,6 +131,10 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           obscureText: true,
+                          autofillHints: const [AutofillHints.password],
+                        ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 24),
                         SizedBox(
