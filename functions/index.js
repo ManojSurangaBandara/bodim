@@ -19,8 +19,10 @@ exports.notifyOnRoomApproved = onDocumentUpdated(
     const before = event.data.before.data();
     const after = event.data.after.data();
 
-    // Only fire when a room is newly approved.
-    if (before.status === "approved" || after.status !== "approved") {
+    // Only fire when a room is newly approved from a pending/rejected state.
+    // Resuming a paused ad also sets status to "approved", but should not
+    // trigger the approval notification.
+    if (after.status !== "approved" || before.status === "approved" || before.status === "paused") {
       return null;
     }
 
