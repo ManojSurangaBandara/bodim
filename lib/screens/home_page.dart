@@ -1217,7 +1217,33 @@ class _HomePageState extends State<HomePage> {
                             ),
                             PopupMenuItem(
                               value: 10,
-                              child: Text(t('createAd')),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.add_circle,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      t('createAd'),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                             PopupMenuItem(value: 1, child: Text(t('myAds'))),
                             PopupMenuItem(
@@ -1269,7 +1295,26 @@ class _HomePageState extends State<HomePage> {
                               value: 7,
                               child: Text(t('contactUs')),
                             ),
-                            PopupMenuItem(value: 3, child: Text(t('logout'))),
+                            PopupMenuItem(
+                              value: 3,
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.logout,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    t('logout'),
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                           icon: Icon(Icons.person, color: Colors.white),
                           shape: RoundedRectangleBorder(
