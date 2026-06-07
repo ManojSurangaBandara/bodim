@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/app_state.dart';
 import '../services/localization.dart';
@@ -919,17 +920,44 @@ class _HomePageState extends State<HomePage> {
                                     name: alertName,
                                   );
                                   Navigator.of(bsCtx).pop();
-                                  final ok =
+                                  final result =
                                       await AppState.instance.saveAlert(alert);
-                                  if (context.mounted) {
+                                  if (!context.mounted) return;
+
+                                  if (result == AlertSaveResult.savedWithNotifications) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          ok
-                                              ? t('alertSaved')
-                                              : 'Failed to save alert',
-                                        ),
-                                      ),
+                                      SnackBar(content: Text(t('alertSaved'))),
+                                    );
+                                  } else if (result == AlertSaveResult.savedWithoutNotifications) {
+                                    showDialog<void>(
+                                      context: context,
+                                      builder: (dialogContext) {
+                                        return AlertDialog(
+                                          title: Text('Notification permission required'),
+                                          content: const Text(
+                                            'Alert saved, but notification permission is disabled. Open app settings to enable notifications and receive alert pushes.',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(dialogContext).pop();
+                                              },
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(dialogContext).pop();
+                                                openAppSettings();
+                                              },
+                                              child: const Text('Settings'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Failed to save alert')),
                                     );
                                   }
                                 }

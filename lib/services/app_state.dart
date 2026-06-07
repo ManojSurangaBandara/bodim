@@ -15,6 +15,12 @@ import '../models/saved_alert.dart';
 import '../models/user.dart';
 import '../theme.dart';
 
+enum AlertSaveResult {
+  savedWithNotifications,
+  savedWithoutNotifications,
+  failed,
+}
+
 class PendingNotification {
   final String roomId;
   final String? type;
@@ -71,17 +77,50 @@ class AppState {
     await _initFCM();
   }
 
-  Future<void> _initFCM() async {
+  Future<bool> _requestNotificationPermission() async {
     try {
       final settings = await _fcm.requestPermission(
         alert: true,
         badge: true,
         sound: true,
       );
-      if (settings.authorizationStatus == AuthorizationStatus.denied) return;
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        _fcmToken = await _fcm.getToken();
+        _storeFCMToken(_fcmToken);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Notification permission request failed: $e');
+      return false;
+    }
+  }
 
-      _fcmToken = await _fcm.getToken();
-      _storeFCMToken(_fcmToken);
+  Future<bool> _ensureNotificationPermissionRequested() async {
+    try {
+      final currentSettings = await _fcm.getNotificationSettings();
+      if (currentSettings.authorizationStatus == AuthorizationStatus.notDetermined) {
+        return await _requestNotificationPermission();
+      }
+      if (currentSettings.authorizationStatus == AuthorizationStatus.authorized ||
+          currentSettings.authorizationStatus == AuthorizationStatus.provisional) {
+        if (_fcmToken == null || _fcmToken!.isEmpty) {
+          _fcmToken = await _fcm.getToken();
+          _storeFCMToken(_fcmToken);
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Notification settings check failed: $e');
+      return false;
+    }
+  }
+
+  Future<void> _initFCM() async {
+    try {
+      await _ensureNotificationPermissionRequested();
 
       _fcm.onTokenRefresh.listen((newToken) {
         _removeFCMToken(_fcmToken);
@@ -561,10 +600,11 @@ class AppState {
     return null;
   }
 
-  Future<bool> saveAlert(SavedAlert alert) async {
+  Future<AlertSaveResult> saveAlert(SavedAlert alert) async {
     final uid = _auth.currentUser?.uid;
-    if (uid == null) return false;
+    if (uid == null) return AlertSaveResult.failed;
     try {
+      final permissionGranted = await _ensureNotificationPermissionRequested();
       final token = _fcmToken ?? await _fcm.getToken() ?? '';
       final alertWithToken = SavedAlert(
         userId: uid,
@@ -581,10 +621,12 @@ class AppState {
           .collection('saved_alerts')
           .add(alertWithToken.toMap())
           .timeout(const Duration(seconds: 15));
-      return true;
+      return permissionGranted
+          ? AlertSaveResult.savedWithNotifications
+          : AlertSaveResult.savedWithoutNotifications;
     } catch (e) {
       debugPrint('saveAlert error: $e');
-      return false;
+      return AlertSaveResult.failed;
     }
   }
 
