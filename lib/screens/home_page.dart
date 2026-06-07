@@ -1033,64 +1033,12 @@ class _HomePageState extends State<HomePage> {
             shadowColor: Colors.transparent,
             surfaceTintColor: Colors.transparent,
             actions: [
-              // Theme switcher — single dot opens dropdown
-              PopupMenuButton<AppThemeMode>(
-                tooltip: 'Theme',
-                offset: const Offset(0, 44),
-                onSelected: (mode) => AppState.instance.setThemeMode(mode),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: AppThemeMode.violet,
-                    child: _themeMenuItem(
-                      'Violet',
-                      const Color(0xFF7C3AED),
-                      currentMode == AppThemeMode.violet,
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: AppThemeMode.light,
-                    child: _themeMenuItem(
-                      'Light',
-                      const Color(0xFF0EA5E9),
-                      currentMode == AppThemeMode.light,
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: AppThemeMode.dark,
-                    child: _themeMenuItem(
-                      'Dark',
-                      const Color(0xFF1F2937),
-                      currentMode == AppThemeMode.dark,
-                    ),
-                  ),
-                ],
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _themeColor(currentMode),
-                      border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _themeColor(
-                            currentMode,
-                          ).withValues(alpha: 0.7),
-                          blurRadius: 6,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
               // Filter button with active-count badge
               Stack(
                 alignment: Alignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.tune_rounded),
+                    icon: const Icon(Icons.search),
                     tooltip: t('filters'),
                     onPressed: () => _showFilterSheet(context, languageCode),
                   ),
@@ -1119,28 +1067,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                 ],
               ),
-              // Language selector (icon)
-              PopupMenuButton<String>(
-                tooltip: t('language'),
-                icon: Text(
-                  languageCode == 'si'
-                      ? 'සිං'
-                      : languageCode == 'ta'
-                      ? 'த'
-                      : 'En',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                onSelected: (value) => AppState.instance.setLanguageCode(value),
-                itemBuilder: (_) => [
-                  PopupMenuItem(value: 'en', child: Text(t('english'))),
-                  const PopupMenuItem(value: 'si', child: Text('සිංහල')),
-                  const PopupMenuItem(value: 'ta', child: Text('தமிழ்')),
-                ],
-              ),
               IconButton(
                 onPressed: () async {
                   if (AppState.instance.currentUser.value == null) {
@@ -1158,7 +1084,7 @@ class _HomePageState extends State<HomePage> {
                     MaterialPageRoute(builder: (_) => const AddPostPage()),
                   );
                 },
-                icon: const Icon(Icons.create),
+                icon: const Icon(Icons.add),
                 tooltip: t('createAd'),
                 color: Colors.white,
               ),
@@ -1270,7 +1196,7 @@ class _HomePageState extends State<HomePage> {
                                 child: Row(
                                   children: [
                                     const Icon(
-                                      Icons.add_circle,
+                                      Icons.add,
                                       color: Colors.white,
                                       size: 18,
                                     ),
@@ -1336,6 +1262,96 @@ class _HomePageState extends State<HomePage> {
                               value: 7,
                               child: Text(t('contactUs')),
                             ),
+                            const PopupMenuDivider(),
+                            // Compact theme row
+                            PopupMenuItem(
+                              value: -1,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              child: Row(
+                                children: [
+                                  for (final entry in [
+                                    (AppThemeMode.violet, const Color(0xFF7C3AED)),
+                                    (AppThemeMode.light,  const Color(0xFF0EA5E9)),
+                                    (AppThemeMode.dark,   const Color(0xFF1F2937)),
+                                  ])
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 6),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          AppState.instance.setThemeMode(entry.$1);
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Container(
+                                          width: 22,
+                                          height: 22,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: entry.$2,
+                                            border: Border.all(
+                                              color: currentMode == entry.$1
+                                                  ? Colors.white
+                                                  : Colors.transparent,
+                                              width: 2,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: entry.$2.withValues(alpha: 0.6),
+                                                blurRadius: 4,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            // Compact language row
+                            PopupMenuItem(
+                              value: -2,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              child: Row(
+                                children: [
+                                  for (final entry in [
+                                    ('en', 'En'),
+                                    ('si', 'සිං'),
+                                    ('ta', 'த'),
+                                  ])
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 6),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          AppState.instance.setLanguageCode(entry.$1);
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: languageCode == entry.$1
+                                                ? Theme.of(context).colorScheme.primary
+                                                : Theme.of(context).colorScheme.surface,
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            entry.$2,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: languageCode == entry.$1
+                                                  ? Colors.white
+                                                  : Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuDivider(),
                             PopupMenuItem(
                               value: 3,
                               child: Row(
