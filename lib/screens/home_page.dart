@@ -211,7 +211,7 @@ class _HomePageState extends State<HomePage> {
       (_) => _checkConnectivity(),
     );
     AppState.instance.rooms.addListener(_onRoomsChanged);
-    AppState.instance.pendingNotificationRoomId.addListener(
+    AppState.instance.pendingNotification.addListener(
       _handlePendingNotification,
     );
     _scrollController.addListener(() {
@@ -238,7 +238,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _connectivityTimer?.cancel();
     AppState.instance.rooms.removeListener(_onRoomsChanged);
-    AppState.instance.pendingNotificationRoomId.removeListener(
+    AppState.instance.pendingNotification.removeListener(
       _handlePendingNotification,
     );
     _minPriceController.dispose();
@@ -248,11 +248,24 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _handlePendingNotification() async {
-    final roomId = AppState.instance.pendingNotificationRoomId.value;
-    if (roomId == null || roomId.isEmpty) return;
+    final pending = AppState.instance.pendingNotification.value;
+    if (pending == null || (pending.roomId.isEmpty && (pending.type == null || pending.type!.isEmpty))) {
+      return;
+    }
+
     // Clear immediately so we don't navigate twice.
-    AppState.instance.pendingNotificationRoomId.value = null;
+    AppState.instance.pendingNotification.value = null;
     if (!mounted) return;
+
+    if (pending.type == 'pending_ad') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const PendingAdsPage()),
+      );
+      return;
+    }
+
+    final roomId = pending.roomId;
+    if (roomId.isEmpty) return;
 
     // Retry up to 3 times with a short delay between attempts.
     // This handles the brief "offline" window that can occur when the app

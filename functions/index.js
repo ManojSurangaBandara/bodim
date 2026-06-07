@@ -1,4 +1,4 @@
-const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onDocumentUpdated, onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
@@ -196,6 +196,97 @@ exports.notifyOnRoomApproved = onDocumentUpdated(
     return null;
   }
 );
+
+exports.notifyAdminsOnPendingAd = onDocumentCreated(
+  'rooms/{roomId}',
+  async (event) => {
+    const room = event.data.data();
+    if (!room || room.status !== 'pending') return null;
+    return sendAdminsPendingNotification(room, event.params.roomId);
+  }
+);
+
+exports.notifyAdminsOnPendingAdUpdate = onDocumentUpdated(
+  'rooms/{roomId}',
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+    if (!after) return null;
+    if (after.status !== 'pending' || before?.status === 'pending') return null;
+    return sendAdminsPendingNotification(after, event.params.roomId);
+  }
+);
+
+async function sendAdminsPendingNotification(room, roomId) {
+  const db = getFirestore();
+  const adminSnapshot = await db.collection('users').where('isAdmin', '==', true).get();
+  if (adminSnapshot.empty) return null;
+
+  const tokens = [];
+  const seenTokens = new Set();
+
+  for (const adminDoc of adminSnapshot.docs) {
+    const adminData = adminDoc.data();
+    const adminTokens = Array.isArray(adminData.fcmTokens) ? [...adminData.fcmTokens] : [];
+    if (adminData.fcmToken && !adminTokens.includes(adminData.fcmToken)) {
+      adminTokens.push(adminData.fcmToken);
+    }
+
+    for (const token of adminTokens) {
+      if (token && !seenTokens.has(token)) {
+        seenTokens.add(token);
+        tokens.push({ token, userId: adminDoc.id });
+      }
+    }
+  }
+
+  if (tokens.length === 0) return null;
+
+  const title = 'New pending ad needs review';
+  const body = room.title
+    ? `"${room.title}" is waiting for approval.`
+    : 'A new listing is waiting for admin review.';
+
+  const messaging = getMessaging();
+  const batchSize = 500;
+
+  for (let i = 0; i < tokens.length; i += batchSize) {
+    const batch = tokens.slice(i, i + batchSize);
+    const response = await messaging.sendEachForMulticast({
+      tokens: batch.map((entry) => entry.token),
+      notification: { title, body },
+      android: {
+        notification: {
+          channelId: 'bodim_alerts',
+          priority: 'high',
+        },
+      },
+      data: { roomId, type: 'pending_ad' },
+    });
+
+    const deleteOps = [];
+    response.responses.forEach((res, idx) => {
+      if (
+        !res.success &&
+        res.error &&
+        (res.error.code === 'messaging/registration-token-not-registered' ||
+          res.error.code === 'messaging/invalid-registration-token')
+      ) {
+        deleteOps.push(
+          db.collection('users').doc(batch[idx].userId).update({
+            fcmTokens: FieldValue.arrayRemove(batch[idx].token),
+          }).catch(() => {}),
+        );
+      }
+    });
+
+    if (deleteOps.length > 0) {
+      await Promise.all(deleteOps);
+    }
+  }
+
+  return null;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

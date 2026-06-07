@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -63,11 +65,16 @@ Future<void> _openRoomById(String roomId) async {
 
 /// Called when user taps a notification while app is in the foreground
 /// (shown via flutter_local_notifications). Routes through the same
-/// pendingNotificationRoomId path as background/killed so that HomePage
+/// pendingNotification path as background/killed so that HomePage
 /// applies the matching alert filter in addition to navigating.
-void _handleForegroundNotificationTap(String roomId) {
-  if (roomId.isEmpty) return;
-  AppState.instance.pendingNotificationRoomId.value = roomId;
+void _handleForegroundNotificationTap(String payload) {
+  if (payload.isEmpty) return;
+
+  final data = jsonDecode(payload) as Map<String, dynamic>;
+  AppState.instance.pendingNotification.value = PendingNotification(
+    roomId: data['roomId'] as String? ?? '',
+    type: data['type'] as String?,
+  );
 }
 
 Future<void> main() async {
@@ -105,6 +112,10 @@ Future<void> main() async {
     final notification = message.notification;
     final android = message.notification?.android;
     if (notification != null && android != null) {
+      final payload = jsonEncode({
+        'roomId': message.data['roomId'] as String? ?? '',
+        'type': message.data['type'] as String? ?? '',
+      });
       _localNotifications.show(
         notification.hashCode,
         notification.title,
@@ -117,7 +128,7 @@ Future<void> main() async {
             icon: '@mipmap/ic_launcher',
           ),
         ),
-        payload: message.data['roomId'] as String? ?? '',
+        payload: payload,
       );
     }
   });
@@ -125,8 +136,10 @@ Future<void> main() async {
   // Background → foreground: user tapped the system tray notification.
   // Store the roomId; HomePage will navigate once it is fully mounted.
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    final roomId = message.data['roomId'] as String? ?? '';
-    AppState.instance.pendingNotificationRoomId.value = roomId;
+    AppState.instance.pendingNotification.value = PendingNotification(
+      roomId: message.data['roomId'] as String? ?? '',
+      type: message.data['type'] as String?,
+    );
   });
 
   await AppState.instance.init();
@@ -135,8 +148,10 @@ Future<void> main() async {
   // Store the roomId; HomePage will pick it up after the splash.
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   if (initialMessage != null) {
-    final roomId = initialMessage.data['roomId'] as String? ?? '';
-    AppState.instance.pendingNotificationRoomId.value = roomId;
+    AppState.instance.pendingNotification.value = PendingNotification(
+      roomId: initialMessage.data['roomId'] as String? ?? '',
+      type: initialMessage.data['type'] as String?,
+    );
   }
 
   runApp(const MyApp());

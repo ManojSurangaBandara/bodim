@@ -15,6 +15,13 @@ import '../models/saved_alert.dart';
 import '../models/user.dart';
 import '../theme.dart';
 
+class PendingNotification {
+  final String roomId;
+  final String? type;
+
+  PendingNotification({required this.roomId, this.type});
+}
+
 class AppState {
   AppState._internal();
   static final AppState instance = AppState._internal();
@@ -33,8 +40,8 @@ class AppState {
       ValueNotifier<List<SavedAlert>>([]);
   /// Set by main.dart when a notification is tapped (background / killed).
   /// HomePage listens to this and navigates once it is mounted.
-  final ValueNotifier<String?> pendingNotificationRoomId =
-      ValueNotifier<String?>(null);
+  final ValueNotifier<PendingNotification?> pendingNotification =
+      ValueNotifier<PendingNotification?>(null);
 
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
